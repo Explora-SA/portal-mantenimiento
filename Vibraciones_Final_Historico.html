@@ -1,0 +1,1180 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vibraciones de Bombas — Planta Explora</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap');
+:root{
+  --bg:#f4f5f7;--surface:#ffffff;--surface2:#f9fafb;--border:#e5e7eb;--border2:#d1d5db;
+  --text:#111827;--text2:#374151;--text3:#6b7280;--text4:#9ca3af;
+  --accent:#e67e22;--accent-light:#fff3e6;--accent-hover:#d35400;
+  --green:#16a34a;--green-light:#dcfce7;--red:#dc2626;--red-light:#fee2e2;
+  --blue:#2563eb;--blue-light:#dbeafe;--yellow:#ca8a04;--yellow-light:#fef9c3;
+  --orange:#ea580c;--orange-light:#fff7ed;
+  --sidebar-w:220px;--topbar-h:56px;--radius:10px;--radius-sm:6px;
+  --shadow:0 1px 3px rgba(0,0,0,.08),0 1px 2px rgba(0,0,0,.06);
+  --shadow-md:0 4px 16px rgba(0,0,0,.08);--shadow-lg:0 10px 40px rgba(0,0,0,.12);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);font-family:'DM Sans',sans-serif;color:var(--text);min-height:100vh;font-size:14px;display:flex;flex-direction:column}
+
+/* TOPBAR */
+.topbar{background:var(--surface);border-bottom:1px solid var(--border);padding:0 24px 0 0;display:flex;justify-content:space-between;align-items:center;height:var(--topbar-h);position:fixed;top:0;left:0;right:0;z-index:200;box-shadow:var(--shadow)}
+.topbar-left{display:flex;align-items:center;height:100%}
+.topbar-brand{width:var(--sidebar-w);height:100%;display:flex;align-items:center;padding:0 20px;background:var(--surface);border-right:1px solid var(--border);flex-shrink:0}
+.plant{font-size:10px;color:var(--text4);text-transform:uppercase;letter-spacing:1.5px;font-weight:600}
+.title{font-size:13px;font-weight:700;color:var(--text);display:flex;align-items:center;gap:7px;margin-top:2px}
+.title-dot{width:9px;height:9px;background:var(--accent);border-radius:2px;transform:rotate(8deg);flex-shrink:0}
+.topbar-right{display:flex;align-items:center;gap:14px}
+.last-update{font-size:11px;color:var(--text4);text-align:right}
+.last-update span{color:var(--green);font-weight:600}
+.user-pill{display:flex;align-items:center;gap:8px;background:var(--accent-light);border:1px solid #fed7aa;border-radius:20px;padding:5px 14px}
+.user-name{font-size:12px;font-weight:700;color:var(--accent)}
+.user-rol{font-size:10px;color:var(--text4);text-transform:uppercase;letter-spacing:.8px}
+
+/* LAYOUT */
+.layout{display:flex;margin-top:var(--topbar-h);min-height:calc(100vh - var(--topbar-h))}
+
+/* SIDEBAR */
+.sidebar{width:var(--sidebar-w);background:var(--surface);border-right:1px solid var(--border);position:fixed;top:var(--topbar-h);left:0;bottom:0;overflow-y:auto;z-index:100;display:flex;flex-direction:column;box-shadow:2px 0 8px rgba(0,0,0,.04)}
+.sidebar-section{padding:10px 0 4px}
+.sidebar-label{font-size:10px;color:var(--text4);text-transform:uppercase;letter-spacing:1.2px;font-weight:700;padding:0 16px 6px}
+.nav-item{display:flex;align-items:center;gap:10px;padding:9px 16px;cursor:pointer;border:none;background:transparent;color:var(--text3);font-size:13px;font-weight:500;font-family:inherit;width:100%;text-align:left;transition:all .15s;position:relative}
+.nav-item:hover{background:var(--surface2);color:var(--text)}
+.nav-item.active{background:var(--accent-light);color:var(--accent);font-weight:600}
+.nav-item.active::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--accent);border-radius:0 2px 2px 0}
+.nav-item.locked{opacity:.45;cursor:not-allowed;pointer-events:none}
+.nav-icon{font-size:15px;width:20px;text-align:center;flex-shrink:0}
+.sidebar-divider{height:1px;background:var(--border);margin:6px 14px}
+
+/* MAIN */
+.main{margin-left:var(--sidebar-w);flex:1;padding:24px 28px;overflow-x:hidden}
+.view{display:none}.view.active{display:block}
+
+/* PAGE HEADER */
+.page-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:12px}
+.page-title{font-size:18px;font-weight:700;color:var(--text)}
+.page-sub{font-size:12px;color:var(--text3);margin-top:2px}
+
+/* METRICS */
+.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:20px}
+.metric{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;text-align:center;box-shadow:var(--shadow)}
+.metric-label{font-size:11px;color:var(--text4);text-transform:uppercase;letter-spacing:.6px;font-weight:600;margin-bottom:6px}
+.metric-val{font-size:28px;font-weight:700;line-height:1}
+.metric-sub{font-size:11px;color:var(--text4);margin-top:4px}
+
+/* FILTER BAR */
+.filter-bar{display:flex;gap:10px;margin-bottom:16px;align-items:center;flex-wrap:wrap}
+select,input[type="text"],input[type="number"]{background:var(--surface);border:1px solid var(--border);color:var(--text2);font-size:12px;padding:7px 10px;border-radius:var(--radius-sm);font-family:inherit}
+select:focus,input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(230,126,34,.1)}
+
+/* BUTTONS */
+.btn{background:var(--surface);border:1px solid var(--border2);color:var(--text3);font-size:12px;padding:7px 14px;border-radius:var(--radius-sm);cursor:pointer;font-family:inherit;transition:.15s;display:inline-flex;align-items:center;gap:5px}
+.btn:hover{background:var(--surface2)}
+.btn-green{border-color:#bbf7d0;color:var(--green)}.btn-green:hover{background:var(--green-light)}
+.btn-orange{background:var(--accent);color:#fff;border-color:var(--accent)}.btn-orange:hover{background:var(--accent-hover)}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+
+/* SECTION BOX */
+.section-box{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;margin-bottom:16px;box-shadow:var(--shadow)}
+.section-header{background:var(--surface2);padding:12px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;color:var(--text)}
+
+/* TABLE */
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{text-align:left;padding:10px 12px;color:var(--text4);font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.6px;border-bottom:1px solid var(--border);background:var(--surface2)}
+td{padding:9px 12px;border-bottom:1px solid var(--border);vertical-align:middle;color:var(--text2)}
+tr:hover td{background:var(--accent-light)}
+.tbl-wrap{overflow-x:auto;max-height:300px;overflow-y:auto}
+
+/* BOMBAS GRID */
+.bombas-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px}
+.bomba-card{background:var(--surface);border:2px solid var(--border);border-radius:var(--radius);padding:12px;text-align:center;cursor:pointer;transition:all .2s}
+.bomba-card:hover{transform:translateY(-2px);box-shadow:var(--shadow-md)}
+.bomba-card.critico{border-color:var(--red);background:var(--red-light)}
+.bomba-card.alerta{border-color:var(--yellow);background:var(--yellow-light)}
+.bomba-card.inicio{border-color:#ea580c;background:#fff7ed}
+.bomba-card.ok{border-color:var(--green);background:var(--green-light)}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(220,38,38,.3)}50%{box-shadow:0 0 0 6px rgba(220,38,38,0)}}
+.bomba-card.critico{animation:pulse 2s infinite}
+.bomba-tag{font-size:11px;font-weight:700;color:var(--text);margin-bottom:4px;font-family:'DM Mono',monospace}
+.bomba-val{font-size:20px;font-weight:700;line-height:1.2}
+.bomba-card.critico .bomba-val{color:var(--red)}.bomba-card.alerta .bomba-val{color:var(--yellow)}
+.bomba-card.inicio .bomba-val{color:#ea580c}.bomba-card.ok .bomba-val{color:var(--green)}
+.bomba-estado{font-size:10px;font-weight:700;text-transform:uppercase;margin-top:3px}
+.bomba-card.critico .bomba-estado{color:var(--red)}.bomba-card.alerta .bomba-estado{color:var(--yellow)}
+.bomba-card.inicio .bomba-estado{color:#ea580c}.bomba-card.ok .bomba-estado{color:var(--green)}
+.bomba-fecha{font-size:10px;color:var(--text4);margin-top:2px}
+.bomba-pto{font-size:10px;color:var(--text4)}
+
+/* RANKING */
+.rank-list{display:flex;flex-direction:column;gap:6px}
+.rank-item{display:flex;align-items:center;gap:8px}
+.rank-num{font-size:11px;color:var(--text4);width:18px;text-align:right;flex-shrink:0}
+.rank-tag{font-size:12px;color:var(--text2);width:100px;flex-shrink:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-family:'DM Mono',monospace;font-size:11px}
+.rank-bw{flex:1;background:var(--surface2);border-radius:4px;height:18px;overflow:hidden;border:1px solid var(--border)}
+.rank-b{height:100%;border-radius:4px;display:flex;align-items:center;padding-left:6px}
+.rank-b.critico{background:#fee2e2}.rank-b.alerta{background:#fef9c3}
+.rank-b.inicio{background:#fff7ed}.rank-b.ok{background:#dcfce7}
+.rank-b span{font-size:10px;font-weight:700;color:var(--text2)}
+
+/* CARDS GRID */
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:12px;box-shadow:var(--shadow)}
+.card h3{font-size:11px;color:var(--text4);text-transform:uppercase;letter-spacing:.8px;font-weight:600;margin-bottom:12px}
+
+/* LEGEND */
+.legend-row{display:flex;gap:12px;margin-bottom:12px;flex-wrap:wrap;align-items:center}
+.leg-item{display:flex;align-items:center;gap:5px;font-size:12px;color:var(--text3)}
+.leg-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+
+/* KPI ROW */
+.kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px}
+.kpi{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;text-align:center;box-shadow:var(--shadow)}
+.kpi .lbl{font-size:11px;color:var(--text4);text-transform:uppercase;letter-spacing:.6px;font-weight:600;margin-bottom:6px}
+.kpi .val{font-size:28px;font-weight:700;line-height:1}
+.kpi.red .val{color:var(--red)}.kpi.orange .val{color:#ea580c}
+.kpi.yellow .val{color:var(--yellow)}.kpi.green .val{color:var(--green)}
+
+/* FICHA */
+.esquema-wrap{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:16px;box-shadow:var(--shadow)}
+.esquema-title{font-size:14px;font-weight:700;color:var(--accent)}
+.esquema-fecha{font-size:12px;color:var(--text3);margin-top:2px}
+.svg-wrap{width:100%;background:var(--surface2);border-radius:var(--radius-sm);overflow:hidden;border:1px solid var(--border)}
+.svg-wrap svg{width:100%;height:auto;display:block}
+
+/* CARGA */
+.carga-wrap{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px;box-shadow:var(--shadow)}
+.carga-top{display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;margin-bottom:16px}
+.carga-field{display:flex;flex-direction:column;gap:4px}
+.carga-field label{font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;font-weight:600}
+.carga-field select,.carga-field input{background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:7px 10px;border-radius:var(--radius-sm);font-size:12px;font-family:inherit}
+.carga-counter{font-size:12px;color:var(--text3);margin-bottom:12px}
+.carga-counter span{font-weight:700;color:var(--blue)}
+.zona-c{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px;display:inline-flex;flex-direction:column;width:fit-content}
+.zona-c-title{font-size:10px;font-weight:700;color:var(--text3);text-align:center;margin-bottom:8px;text-transform:uppercase;letter-spacing:.8px}
+.zona-tipo{font-size:11px;color:var(--text4);margin:6px 0 4px;font-weight:500}
+.puntos-row{display:flex;gap:8px;flex-wrap:nowrap}
+.pto{width:62px;height:62px;border-radius:50%;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;border:2px solid var(--border2);background:var(--surface);transition:all .15s;flex-shrink:0}
+.pto:hover{transform:scale(1.08);box-shadow:var(--shadow-md)}
+.pto .pn{font-size:10px;font-weight:600;color:var(--text4);line-height:1.2;font-family:'DM Mono',monospace}
+.pto .pv{font-size:13px;font-weight:700;color:var(--text);line-height:1.3}
+
+/* POPUP */
+.vp-overlay{display:none;position:fixed;top:0;left:0;width:100%;height:100%;z-index:1999;background:rgba(0,0,0,.35)}
+.valor-popup{display:none;position:fixed;z-index:2000;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px;width:220px;box-shadow:var(--shadow-lg);text-align:center}
+.vp-titulo{font-size:12px;color:var(--text3);margin-bottom:2px;font-weight:600;text-transform:uppercase;letter-spacing:.5px}
+.vp-tipo{font-size:14px;font-weight:700;color:var(--text);margin-bottom:12px}
+.vp-inp{width:100%;background:var(--surface2);border:2px solid var(--accent);color:var(--text);padding:10px;border-radius:var(--radius-sm);font-size:22px;text-align:center;outline:none;margin-bottom:12px;font-weight:700;font-family:'DM Mono',monospace}
+.vp-btns{display:flex;gap:8px;justify-content:center}
+.vp-ok{background:var(--accent);border:none;color:#fff;padding:8px 20px;border-radius:var(--radius-sm);cursor:pointer;font-weight:700;font-size:13px;font-family:inherit}
+.vp-cancel{background:var(--surface2);border:1px solid var(--border2);color:var(--text3);padding:8px 14px;border-radius:var(--radius-sm);cursor:pointer;font-size:13px;font-family:inherit}
+
+/* STATUS TEXTS */
+.critico-t{color:var(--red);font-weight:600}.alerta-t{color:var(--yellow);font-weight:600}
+.inicio-t{color:#ea580c;font-weight:600}.ok-t{color:var(--green);font-weight:600}.info-t{color:var(--blue)}
+.no-data{color:var(--text4);font-size:13px;padding:20px;text-align:center}
+.err{color:var(--red);font-size:13px;padding:30px;text-align:center}
+.loading-wrap{display:flex;flex-direction:column;align-items:center;justify-content:center;height:60vh;gap:14px}
+.spinner{width:40px;height:40px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* Centrar modal PDF en cualquier pantalla */
+#pdf-popup{top:50%;left:50%;transform:translate(-50%,-50%)}
+
+/* ===== TABLET / TÁCTIL (8") ===== */
+@media (max-width:1024px){
+  body{font-size:15px}
+  /* Barra lateral -> pestañas horizontales arriba */
+  .layout{flex-direction:column}
+  .sidebar{position:static;top:auto;left:auto;bottom:auto;width:100%;flex-direction:row;
+    border-right:none;border-bottom:1px solid var(--border);overflow-x:auto;box-shadow:0 2px 8px rgba(0,0,0,.05)}
+  .sidebar-section{padding:6px 8px;display:flex;align-items:center;gap:6px}
+  .sidebar-label{display:none}
+  .sidebar-divider{display:none}
+  .nav-item{width:auto;white-space:nowrap;padding:13px 18px;font-size:15px;border-radius:var(--radius-sm)}
+  .nav-item.active::before{display:none}
+  .nav-item.active{border:1px solid var(--accent)}
+  .main{margin-left:0;padding:16px}
+  .topbar-brand{width:auto;padding:0 14px;border-right:none}
+  /* Grillas colapsan */
+  .metrics,.kpi-row{grid-template-columns:repeat(2,1fr)}
+  .g2{grid-template-columns:1fr}
+  /* Carga: zonas apiladas, puntos que envuelven */
+  #carga-pump>div[style*="grid"],#carga-decanter>div[style*="grid"]{grid-template-columns:1fr !important}
+  .zona-c{width:100% !important;display:flex}
+  .puntos-row{flex-wrap:wrap;justify-content:center}
+  /* Formulario de carga a lo ancho */
+  .carga-top{gap:14px}
+  .carga-field{flex:1 1 150px}
+  .carga-wrap{padding:14px}
+  /* Puntos más grandes para el dedo */
+  .pto{width:74px;height:74px}
+  .pto .pn{font-size:11px}
+  .pto .pv{font-size:16px}
+  /* Inputs y botones táctiles */
+  select,input[type="text"],input[type="number"],input[type="time"],input[type="date"],
+  .carga-field select,.carga-field input{font-size:16px;padding:11px 12px}
+  .btn{font-size:15px;padding:11px 16px}
+  .vp-inp{font-size:26px;padding:12px}
+  .vp-ok,.vp-cancel{padding:12px 20px;font-size:15px}
+  th,td{padding:11px 12px}
+}
+@media (max-width:720px){
+  .metrics,.kpi-row{grid-template-columns:1fr 1fr}
+  .carga-field{flex:1 1 100%}
+  .main{padding:12px}
+}
+</style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="topbar-left">
+    <div class="topbar-brand">
+      <div>
+        <div class="plant">Planta Explora</div>
+        <div class="title"><span class="title-dot"></span>VIBRACIONES</div>
+      </div>
+    </div>
+  </div>
+  <div class="topbar-right">
+    <div class="last-update">Última actualización<br><span id="upd-time">—</span></div>
+    <div class="user-pill" id="user-pill" style="display:none">
+      <div>
+        <div class="user-name" id="user-name-top">—</div>
+        <div class="user-rol" id="user-rol-top">—</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- LAYOUT -->
+<div class="layout">
+
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+    <div class="sidebar-section">
+      <div class="sidebar-label">Vistas</div>
+      <button class="nav-item active" id="nav-general" onclick="switchTab('general')">
+        <span class="nav-icon">🗺️</span> Vista General
+      </button>
+      <button class="nav-item" id="nav-ficha" onclick="switchTab('ficha')">
+        <span class="nav-icon">🔍</span> Ficha de Bomba
+      </button>
+    </div>
+    <div class="sidebar-divider"></div>
+    <div class="sidebar-section">
+      <div class="sidebar-label">Carga</div>
+      <button class="nav-item" id="nav-carga" onclick="switchTab('carga')">
+        <span class="nav-icon">📝</span> Cargar Medición
+      </button>
+    </div>
+  </div>
+
+  <!-- MAIN -->
+  <div class="main">
+
+    <!-- FILTROS POR VISTA -->
+    <div id="fbar-general" style="display:none;margin-bottom:16px">
+      <div class="filter-bar">
+        <label style="font-size:11px;color:var(--text3);font-weight:600">Mostrar:</label>
+        <select id="f-estado" onchange="renderGeneral()">
+          <option value="criticas">⚠️ Solo con alertas</option>
+          <option value="ALL">Todas las bombas</option>
+        </select>
+      </div>
+    </div>
+    <div id="fbar-ficha" style="display:none;margin-bottom:16px">
+      <div class="filter-bar">
+        <label style="font-size:11px;color:var(--text3);font-weight:600">Bomba:</label>
+        <select id="fi-bomba" onchange="onBombaChange()" style="min-width:150px"><option value="">— Seleccioná —</option></select>
+        <label style="font-size:11px;color:var(--text3);font-weight:600">Fecha:</label>
+        <select id="fi-fecha" onchange="renderFicha()"><option value="">— Seleccioná —</option></select>
+        <label style="font-size:11px;color:var(--text3);font-weight:600">Variable:</label>
+        <select id="fi-var" onchange="renderFicha()">
+          <option value="ALL">Todas</option>
+          <option value="Acel">Aceleración</option>
+          <option value="Veloc">Velocidad</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- LOADING -->
+    <div class="loading-wrap" id="loading">
+      <div class="spinner"></div>
+      <div style="color:var(--text4);font-size:13px">Cargando datos...</div>
+    </div>
+
+    <!-- VISTA GENERAL -->
+    <div class="view" id="page-general">
+      <div class="page-header">
+        <div>
+          <div class="page-title">Vista General</div>
+          <div class="page-sub">Estado actual de todas las bombas</div>
+        </div>
+      </div>
+      <div class="legend-row">
+        <div class="leg-item"><div class="leg-dot" style="background:var(--red)"></div>Crítico &gt;5g</div>
+        <div class="leg-item"><div class="leg-dot" style="background:var(--yellow)"></div>Alerta 2.5–5g</div>
+        <div class="leg-item"><div class="leg-dot" style="background:#ea580c"></div>Inicio 1.5–2.5g</div>
+        <div class="leg-item"><div class="leg-dot" style="background:var(--green)"></div>OK &lt;1.5g</div>
+        <span style="margin-left:auto;font-size:11px;color:var(--text4)">Veloc ISO 10816 Gr.1 (informativa)</span>
+      </div>
+      <div class="kpi-row">
+        <div class="kpi red"><div class="lbl">🔴 Crítico</div><div class="val" id="k-critico">—</div></div>
+        <div class="kpi yellow"><div class="lbl">🟡 Alerta</div><div class="val" id="k-alerta">—</div></div>
+        <div class="kpi orange"><div class="lbl">🟠 Inicio Falla</div><div class="val" id="k-inicio">—</div></div>
+        <div class="kpi green"><div class="lbl">🟢 OK</div><div class="val" id="k-ok">—</div></div>
+      </div>
+      <div class="g2">
+        <div class="card" style="margin-bottom:0"><h3>🏆 Ranking — Aceleración Máxima</h3><div class="rank-list" id="ranking"></div></div>
+        <div class="card" style="margin-bottom:0"><h3>📊 Distribución</h3><canvas id="ch-estado" style="max-height:200px"></canvas></div>
+      </div>
+      <div style="margin-top:12px">
+        <div class="card" style="margin-bottom:10px">
+          <h3 id="grid-title">⚠️ Bombas que Requieren Atención</h3>
+          <div id="bombas-grid" class="bombas-grid"></div>
+        </div>
+        <div class="card" style="margin-bottom:0">
+          <h3>🌊 Velocidad Crítica &gt;10 mm/s</h3>
+          <div id="bombas-veloc" class="bombas-grid"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- FICHA -->
+    <div class="view" id="page-ficha">
+      <div class="page-header">
+        <div>
+          <div class="page-title">Ficha de Bomba</div>
+          <div class="page-sub">Detalle de puntos de medición e historial</div>
+        </div>
+      </div>
+      <div id="ficha-content"><div class="no-data">Seleccioná una bomba en el filtro.</div></div>
+    </div>
+
+    <!-- CARGA -->
+    <div class="view" id="page-carga">
+      <div class="page-header">
+        <div>
+          <div class="page-title">Cargar Medición</div>
+          <div class="page-sub">Ingresá los valores de cada punto de medición</div>
+        </div>
+      </div>
+      <div class="carga-wrap">
+        <div class="carga-top">
+          <div class="carga-field">
+            <label>Equipo</label>
+            <select id="c-bomba" style="min-width:160px" onchange="onCargaEquipoChange()"><option value="">— Seleccioná —</option></select>
+            <input type="text" id="c-bomba-nuevo" placeholder="Nombre del equipo nuevo" oninput="renderCarga()" style="display:none;min-width:170px;text-transform:uppercase;margin-left:6px">
+          </div>
+          <div class="carga-field">
+            <label>Fecha</label>
+            <div style="display:flex;gap:6px">
+              <select id="c-dia"></select>
+              <select id="c-mes">
+                <option value="01">Ene</option><option value="02">Feb</option><option value="03">Mar</option>
+                <option value="04">Abr</option><option value="05">May</option><option value="06">Jun</option>
+                <option value="07">Jul</option><option value="08">Ago</option><option value="09">Sep</option>
+                <option value="10">Oct</option><option value="11">Nov</option><option value="12">Dic</option>
+              </select>
+              <select id="c-anio">
+                <option value="2024">2024</option><option value="2025">2025</option><option value="2026" selected>2026</option>
+              </select>
+            </div>
+          </div>
+          <div class="carga-field">
+            <label>Operador</label>
+            <input type="text" id="c-operador" placeholder="Nombre operador" style="min-width:160px">
+          </div>
+          <div class="carga-field">
+            <label>Veloc. Bomba (%)</label>
+            <input type="number" id="c-veloc-bomba" min="0" max="100" placeholder="0-100" style="width:90px">
+          </div>
+          <div class="carga-field" style="flex:1;min-width:200px">
+            <label>Observaciones</label>
+            <input type="text" id="c-observaciones" placeholder="Observación general de la medición (opcional)" style="width:100%">
+          </div>
+          <div style="margin-left:auto;display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+            <span id="carga-msg" style="font-size:12px"></span>
+            <button class="btn" onclick="limpiarCarga()">🗑 Limpiar</button>
+            <button class="btn btn-orange" onclick="guardarCarga()">💾 Guardar</button>
+          </div>
+        </div>
+        <div class="carga-counter">Hacé clic en cada punto — <span id="c-counter">0/22 cargados</span></div>
+        <div id="carga-pump">
+        <div style="display:grid;grid-template-columns:1fr 1.5fr 1fr 0.8fr;gap:10px;margin-bottom:10px;align-items:start">
+          <div class="zona-c">
+            <div class="zona-c-title">MOTOR</div>
+            <div class="zona-tipo">Acel (g)</div><div class="puntos-row" id="sup-motor-acel"></div>
+            <div class="zona-tipo">Veloc (mm/s)</div><div class="puntos-row" id="sup-motor-veloc"></div>
+          </div>
+          <div></div>
+          <div class="zona-c">
+            <div class="zona-c-title">BOMBA</div>
+            <div class="zona-tipo">Acel (g)</div><div class="puntos-row" id="sup-bomba-acel"></div>
+            <div class="zona-tipo">Veloc (mm/s)</div><div class="puntos-row" id="sup-bomba-veloc"></div>
+          </div>
+          <div></div>
+        </div>
+        <div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);overflow:hidden;margin-bottom:10px">
+          <svg viewBox="0 0 700 70" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;display:block">
+            <line x1="50" y1="35" x2="640" y2="35" stroke="#d1d5db" stroke-width="2"/>
+            <rect x="50" y="12" width="110" height="46" rx="4" fill="#f3f4f6" stroke="#d1d5db" stroke-width="1.5"/>
+            <ellipse cx="50" cy="35" rx="9" ry="23" fill="#e5e7eb" stroke="#d1d5db" stroke-width="1.5"/>
+            <ellipse cx="160" cy="35" rx="9" ry="23" fill="#e5e7eb" stroke="#d1d5db" stroke-width="1.5"/>
+            <rect x="172" y="28" width="16" height="14" rx="2" fill="#e5e7eb" stroke="#2563eb" stroke-width="1" stroke-dasharray="3,2"/>
+            <path d="M 196 20 L 370 20 L 388 28 L 388 42 L 370 50 L 196 50 Z" fill="#f3f4f6" stroke="#d1d5db" stroke-width="1.5"/>
+            <circle cx="282" cy="35" r="14" fill="#e5e7eb" stroke="#d1d5db" stroke-width="1"/>
+            <circle cx="282" cy="35" r="5" fill="#f9fafb" stroke="#9ca3af" stroke-width="1"/>
+            <rect x="398" y="20" width="62" height="30" rx="4" fill="#f3f4f6" stroke="#d1d5db" stroke-width="1.5"/>
+            <rect x="460" y="26" width="22" height="18" rx="3" fill="#e5e7eb" stroke="#d1d5db" stroke-width="1.5"/>
+            <rect x="422" y="5" width="12" height="16" rx="2" fill="#e5e7eb" stroke="#d1d5db" stroke-width="1.5"/>
+            <rect x="482" y="28" width="28" height="14" rx="2" fill="#e5e7eb" stroke="#d1d5db" stroke-width="1.5"/>
+            <text x="105" y="39" text-anchor="middle" font-size="10" fill="#6b7280" font-weight="bold">MOTOR</text>
+            <text x="282" y="39" text-anchor="middle" font-size="9" fill="#6b7280">BOMBA</text>
+            <text x="429" y="39" text-anchor="middle" font-size="8" fill="#6b7280">VOL</text>
+          </svg>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr 0.8fr;gap:10px;align-items:start">
+          <div class="zona-c">
+            <div class="zona-c-title">MOTOR</div>
+            <div class="zona-tipo">Acel</div><div class="puntos-row" id="inf-motor-acel"></div>
+            <div class="zona-tipo">Veloc</div><div class="puntos-row" id="inf-motor-veloc"></div>
+          </div>
+          <div class="zona-c">
+            <div class="zona-c-title">AXIAL</div>
+            <div class="zona-tipo">Acel</div><div class="puntos-row" id="inf-axial-acel"></div>
+            <div class="zona-tipo">Veloc</div><div class="puntos-row" id="inf-axial-veloc"></div>
+          </div>
+          <div class="zona-c">
+            <div class="zona-c-title">BOMBA</div>
+            <div class="zona-tipo">Acel</div><div class="puntos-row" id="inf-bomba-acel"></div>
+            <div class="zona-tipo">Veloc</div><div class="puntos-row" id="inf-bomba-veloc"></div>
+          </div>
+          <div class="zona-c">
+            <div class="zona-c-title">VOLUTA</div>
+            <div class="zona-tipo">Acel</div><div class="puntos-row" id="inf-voluta-acel"></div>
+            <div class="zona-tipo">Veloc</div><div class="puntos-row" id="inf-voluta-veloc"></div>
+          </div>
+        </div>
+        </div><!-- /carga-pump -->
+
+        <!-- LAYOUT CARGA DECANTER (DCX 400601) -->
+        <div id="carga-decanter" style="display:none">
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:10px;align-items:start">
+            <div class="zona-c">
+              <div class="zona-c-title">MOTOR (sup)</div>
+              <div class="zona-tipo">Acel (g)</div><div class="puntos-row" id="dec-motor-sup-acel"></div>
+              <div class="zona-tipo">Veloc (mm/s)</div><div class="puntos-row" id="dec-motor-sup-veloc"></div>
+            </div>
+            <div class="zona-c">
+              <div class="zona-c-title">DESCARGA SALES (sup)</div>
+              <div class="zona-tipo">Acel (g)</div><div class="puntos-row" id="dec-sales-sup-acel"></div>
+              <div class="zona-tipo">Veloc (mm/s)</div><div class="puntos-row" id="dec-sales-sup-veloc"></div>
+            </div>
+            <div class="zona-c">
+              <div class="zona-c-title">DESCARGA GL. (sup)</div>
+              <div class="zona-tipo">Acel (g)</div><div class="puntos-row" id="dec-gl-sup-acel"></div>
+              <div class="zona-tipo">Veloc (mm/s)</div><div class="puntos-row" id="dec-gl-sup-veloc"></div>
+            </div>
+          </div>
+          <div style="display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;margin-bottom:10px">
+            <div class="zona-c" style="align-items:center">
+              <div class="zona-c-title">TEMP. ROD TAMBOR</div>
+              <div class="puntos-row" id="dec-temp-izq" style="justify-content:center"></div>
+            </div>
+            <div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);overflow:hidden">
+              <svg viewBox="0 0 700 80" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;display:block">
+                <rect x="60" y="24" width="60" height="32" rx="4" fill="#f3f4f6" stroke="#d1d5db" stroke-width="1.5"/>
+                <text x="90" y="44" text-anchor="middle" font-size="8" fill="#6b7280">MOTOR</text>
+                <line x1="120" y1="40" x2="150" y2="40" stroke="#9ca3af" stroke-width="2"/>
+                <rect x="150" y="16" width="360" height="48" rx="24" fill="#f3f4f6" stroke="#d1d5db" stroke-width="1.5"/>
+                <path d="M 510 24 L 560 32 L 560 48 L 510 56 Z" fill="#e5e7eb" stroke="#d1d5db" stroke-width="1.5"/>
+                <text x="330" y="44" text-anchor="middle" font-size="9" fill="#6b7280" font-weight="bold">DECANTER — Tambor / Tornillo</text>
+                <text x="210" y="12" text-anchor="middle" font-size="7.5" fill="#9ca3af">Descarga Sales</text>
+                <text x="450" y="12" text-anchor="middle" font-size="7.5" fill="#9ca3af">Descarga Gral.</text>
+              </svg>
+            </div>
+            <div class="zona-c" style="align-items:center">
+              <div class="zona-c-title">TEMP. ROD TAMBOR / RED.</div>
+              <div class="puntos-row" id="dec-temp-der" style="justify-content:center"></div>
+            </div>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:10px;align-items:start">
+            <div class="zona-c">
+              <div class="zona-c-title">MOTOR (inf)</div>
+              <div class="zona-tipo">Acel (g)</div><div class="puntos-row" id="dec-motor-inf-acel"></div>
+              <div class="zona-tipo">Veloc (mm/s)</div><div class="puntos-row" id="dec-motor-inf-veloc"></div>
+            </div>
+            <div class="zona-c">
+              <div class="zona-c-title">DESCARGA SALES (inf)</div>
+              <div class="zona-tipo">Acel (g)</div><div class="puntos-row" id="dec-sales-inf-acel"></div>
+              <div class="zona-tipo">Veloc (mm/s)</div><div class="puntos-row" id="dec-sales-inf-veloc"></div>
+            </div>
+            <div class="zona-c">
+              <div class="zona-c-title">DESCARGA GL. (inf)</div>
+              <div class="zona-tipo">Acel (g)</div><div class="puntos-row" id="dec-gl-inf-acel"></div>
+              <div class="zona-tipo">Veloc (mm/s)</div><div class="puntos-row" id="dec-gl-inf-veloc"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /main -->
+</div><!-- /layout -->
+
+<!-- POPUP -->
+<div class="vp-overlay" id="vp-overlay" onclick="cerrarPopup()"></div>
+<div class="valor-popup" id="valor-popup">
+  <div class="vp-titulo" id="vp-titulo">—</div>
+  <div class="vp-tipo" id="vp-tipo">—</div>
+  <input type="number" class="vp-inp" id="vp-input" step="0.01" min="0" placeholder="0.00" onkeydown="if(event.key==='Enter')confirmarValor()">
+  <div class="vp-btns">
+    <button class="vp-cancel" onclick="cerrarPopup()">Cancelar</button>
+    <button class="vp-ok" onclick="confirmarValor()">✓ OK</button>
+  </div>
+</div>
+
+<!-- MODAL EXPORTAR PDF -->
+<div class="vp-overlay" id="pdf-overlay" onclick="cerrarExportPDF()"></div>
+<div class="valor-popup" id="pdf-popup" style="width:300px;text-align:left">
+  <div class="vp-titulo" style="margin-bottom:12px">📄 Exportar tendencias a PDF</div>
+  <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:14px">
+    <label style="font-size:11px;color:var(--text3);font-weight:600;text-transform:uppercase;letter-spacing:.5px">Fecha inicio</label>
+    <input type="date" id="pdf-desde" style="width:100%">
+    <label style="font-size:11px;color:var(--text3);font-weight:600;text-transform:uppercase;letter-spacing:.5px;margin-top:4px">Fecha fin</label>
+    <input type="date" id="pdf-hasta" style="width:100%">
+  </div>
+  <div id="pdf-msg" style="font-size:11px;color:var(--red);margin-bottom:10px;min-height:14px"></div>
+  <div class="vp-btns" style="justify-content:flex-end">
+    <button class="vp-cancel" onclick="cerrarExportPDF()">Cancelar</button>
+    <button class="vp-ok" onclick="generarPDF()">Generar PDF</button>
+  </div>
+</div>
+
+<script>
+const API     ="https://script.google.com/macros/s/AKfycbxcdExWNMnv8sXnTuzRpmvOTt01ou4P6AXvjEDfCeBwKJh9mZCwtsJ4yvTBmrE41vl3eQ/exec";
+const API_POST="https://script.google.com/macros/s/AKfycbxcdExWNMnv8sXnTuzRpmvOTt01ou4P6AXvjEDfCeBwKJh9mZCwtsJ4yvTBmrE41vl3eQ/exec";
+const A_CRITICO=5,A_ALERTA=2.5,A_INICIO=1.5,V_ALERTA=2.3,V_PELIGRO=4.5;
+let allData=[],charts={};
+// Equipos que todavía no tienen mediciones (para que aparezcan igual en la lista de carga).
+// Escribí acá los nombres tal cual, ej: const EQUIPOS_EXTRA=['PCB 700101','DCX 400602'];
+const EQUIPOS_EXTRA=[
+'PCE 100501','PCE 100503','PCE 100602','PCE 200101','PCE 200401','PCE 200402','PCE 200501','PCE 200502',
+'PCA 200503','PCE 300102','PCE 300407','PCE 300405B','PCE 320102','PCE 950701','PCE 950702','PCE 400101',
+'PCE 610401','PCE 610402','PCE 620101','PCE 620102','PCE 650401','PCE 650402','PCE 650501','PCE 650502',
+'PCE 610502','PCE 610503','PCA 610407','PCE 950501','PCE 950504','PCE 956007','AGX 400601','DCX 400601',
+'PCA 100201','PCA 400501','PCA 400502','PCA 400601','PCA 400602','PCA 400701','PCE 200601','PCE 310101A',
+'PCE 310101B','PCE 310102A','PCE 310102B','PCE 310301','PCE 310302','PCE 400202','PCE 400401','PCE 400501',
+'PCE 400502','PCE 400601','PCE 400602','PCE 400603','PCE 400604','PCE 500201','PCE 500301','PCE 500302',
+'PCE 500303','PCE 500401','PCE 630101','PCE 630102','PCE 630105','PCE 630106','PCE 710103','PCE 710104',
+'PCE 730101','PCE 730102','PCE 730105','PCE 740101','PCE 760101/1','PCE 760101/2','VTF 760101','PCE 760105 E',
+'PCE 760105 O','VTF 760105','VEN 730101','VEN 730105','VEN 730105 seguimiento sensor','AGX 100401','AGX 100402',
+'AGX 100405','AGX 200401','AGX 200402','AGX 200501','AGX 200502','PCA 200201','PCA 200203','PCA 200205',
+'PDI 100301','PDI 200602','PDI 400202','PDI 600104','PCA 600103','PCE 750101','PCE 750102','PCE 110102',
+'PCE 110205','PCE 110206','PCE 110207','PCE 110208','PCE 110301','PCE 110402','PCE 110403','PCE 110501',
+'PCE 110608','PCE 640102','PCE 640103','PCE 640105','PCE 740301','PCE 810101','PCE 810301','PCA 640101',
+'AGX 110201','AGX 110202','AGX 110203','AGX 110204','AGX 110210','PCE 740301 pruebas','PCE 750103'
+];
+const CHART_COLORS=['#2563eb','#16a34a','#7c3aed','#dc2626','#ea580c','#0284c7','#15803d','#6d28d9','#b91c1c','#ca8a04','#0369a1','#166534'];
+
+const PUNTOS={
+  'sup-motor-acel':[{num:'01',tipo:'Acel'},{num:'02',tipo:'Acel'}],
+  'sup-motor-veloc':[{num:'05',tipo:'Veloc'},{num:'06',tipo:'Veloc'}],
+  'sup-bomba-acel':[{num:'03',tipo:'Acel'},{num:'04',tipo:'Acel'}],
+  'sup-bomba-veloc':[{num:'07',tipo:'Veloc'},{num:'08',tipo:'Veloc'}],
+  'inf-motor-acel':[{num:'09',tipo:'Acel'},{num:'10',tipo:'Acel'}],
+  'inf-motor-veloc':[{num:'16',tipo:'Veloc'},{num:'17',tipo:'Veloc'}],
+  'inf-axial-acel':[{num:'11',tipo:'Acel'},{num:'12',tipo:'Acel'}],
+  'inf-axial-veloc':[{num:'18',tipo:'Veloc'},{num:'19',tipo:'Veloc'}],
+  'inf-bomba-acel':[{num:'13',tipo:'Acel'},{num:'14',tipo:'Acel'}],
+  'inf-bomba-veloc':[{num:'20',tipo:'Veloc'},{num:'21',tipo:'Veloc'}],
+  'inf-voluta-acel':[{num:'15',tipo:'Acel'}],
+  'inf-voluta-veloc':[{num:'22',tipo:'Veloc'}]
+};
+const TODOS_PUNTOS=Object.values(PUNTOS).flat();
+
+// ===== DECANTER (DCX 400601) =====
+const DECANTER_TAGS=['DCX 400601'];
+function esDecanter(tag){return DECANTER_TAGS.includes(String(tag||'').trim());}
+const PUNTOS_DEC={
+  'dec-motor-sup-acel':[{num:'01',tipo:'Acel'},{num:'03',tipo:'Acel'}],
+  'dec-motor-sup-veloc':[{num:'02',tipo:'Veloc'},{num:'04',tipo:'Veloc'}],
+  'dec-sales-sup-acel':[{num:'09',tipo:'Acel'}],
+  'dec-sales-sup-veloc':[{num:'10',tipo:'Veloc'}],
+  'dec-gl-sup-acel':[{num:'13',tipo:'Acel'}],
+  'dec-gl-sup-veloc':[{num:'14',tipo:'Veloc'}],
+  'dec-motor-inf-acel':[{num:'05',tipo:'Acel'},{num:'07',tipo:'Acel'}],
+  'dec-motor-inf-veloc':[{num:'06',tipo:'Veloc'},{num:'08',tipo:'Veloc'}],
+  'dec-sales-inf-acel':[{num:'11',tipo:'Acel'}],
+  'dec-sales-inf-veloc':[{num:'12',tipo:'Veloc'}],
+  'dec-gl-inf-acel':[{num:'15',tipo:'Acel'}],
+  'dec-gl-inf-veloc':[{num:'16',tipo:'Veloc'}],
+  'dec-temp-izq':[{num:'19',tipo:'Temp'}],
+  'dec-temp-der':[{num:'17',tipo:'Temp'},{num:'18',tipo:'Temp'}]
+};
+const TODOS_PUNTOS_DEC=Object.values(PUNTOS_DEC).flat();
+const ZONA_MAP_DEC={
+  '01':'MOTOR','02':'MOTOR','03':'MOTOR','04':'MOTOR','05':'MOTOR','06':'MOTOR','07':'MOTOR','08':'MOTOR',
+  '09':'DESCARGA SALES','10':'DESCARGA SALES','11':'DESCARGA SALES','12':'DESCARGA SALES',
+  '13':'DESCARGA GL','14':'DESCARGA GL','15':'DESCARGA GL','16':'DESCARGA GL',
+  '17':'TEMP ROD TAMBOR','18':'TEMP RED','19':'TEMP ROD TAMBOR'
+};
+
+function getFechaLimite(){const d=new Date();d.setFullYear(d.getFullYear()-2);return d;}
+
+async function loadData(){
+  try{
+    const r=await fetch(API+'?action=data');const data=await r.json();
+    const fechaLimite=getFechaLimite();
+    allData=Array.isArray(data)?data.filter(r=>{
+      if(!r['Tag Equipo'])return false;
+      const f=parseDate(r['Fecha Medicion']);return f>=fechaLimite;
+    }):[];
+    if(!allData.length)throw new Error("Sin datos");
+    initFilters();renderGeneral();renderCarga();
+    document.getElementById('loading').style.display='none';
+    document.getElementById('page-general').classList.add('active');
+    document.getElementById('fbar-general').style.display='block';
+    document.getElementById('upd-time').textContent=new Date().toLocaleString('es-AR');
+  }catch(e){
+    document.getElementById('loading').innerHTML=`<div class="err">❌ ${e.message}<br><br>
+    <button onclick="loadData()" class="btn">🔄 Reintentar</button></div>`;
+  }
+}
+
+function parseDate(s){
+  if(!s)return new Date(0);const st=String(s).trim();
+  const m=st.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})(?:[ T](\d{1,2}):(\d{2}))?/);
+  if(m){return new Date(+m[3],+m[2]-1,+m[1],m[4]?+m[4]:0,m[5]?+m[5]:0);}
+  return new Date(st);
+}
+function sameDay(a,b){const da=parseDate(a),db=parseDate(b);return da.getFullYear()===db.getFullYear()&&da.getMonth()===db.getMonth()&&da.getDate()===db.getDate();}
+function formatFecha(s){if(!s)return'—';try{const d=parseDate(s);return isNaN(d)?String(s):d.toLocaleDateString('es-AR',{day:'2-digit',month:'2-digit',year:'numeric'});}catch{return String(s);}}
+// Hora / clave única de medición (fecha + hora) para separar mediciones del mismo día
+function normHora(v){if(v===undefined||v===null||v==='')return'';const m=String(v).match(/(\d{1,2}):(\d{2})/);return m?`${m[1].padStart(2,'0')}:${m[2]}`:String(v).trim();}
+function claveMed(r){return String(r['Fecha Medicion']||'').trim();}
+function formatFechaHora(s){if(!s)return'—';const d=parseDate(s);if(isNaN(d))return String(s);const fecha=d.toLocaleDateString('es-AR',{day:'2-digit',month:'2-digit',year:'numeric'});return /\d{1,2}:\d{2}/.test(String(s))?`${fecha} ${d.toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'})}`:fecha;}
+function getEstadoAcel(v){const n=parseFloat(v);if(isNaN(n))return'sin-dato';if(n>A_CRITICO)return'critico';if(n>A_ALERTA)return'alerta';if(n>A_INICIO)return'inicio';return'ok';}
+function getEstadoVeloc(v){const n=parseFloat(v);if(isNaN(n))return'sin-dato';if(n>=V_PELIGRO)return'peligro';if(n>=V_ALERTA)return'alerta-v';return'ok';}
+function colorAcel(e){return{critico:'#dc2626',alerta:'#ca8a04',inicio:'#ea580c',ok:'#16a34a','sin-dato':'#9ca3af'}[e]||'#9ca3af';}
+function colorVeloc(e){return{peligro:'#dc2626','alerta-v':'#ca8a04',ok:'#2563eb','sin-dato':'#9ca3af'}[e]||'#9ca3af';}
+
+function getLastMedicion(tag){
+  const rows=allData.filter(r=>r['Tag Equipo']===tag);
+  if(!rows.length)return{fecha:null,maxAcel:null,maxPunto:'—',estado:'sin-dato'};
+  const sorted=rows.slice().sort((a,b)=>parseDate(b['Fecha Medicion'])-parseDate(a['Fecha Medicion']));
+  const lf=sorted[0]['Fecha Medicion'];
+  const lr=rows.filter(r=>sameDay(r['Fecha Medicion'],lf));
+  const ar=lr.filter(r=>String(r['Punto medicion']||'').includes('Acel'));
+  const vals=ar.map(r=>parseFloat(r['Valor'])).filter(v=>!isNaN(v));
+  const mx=vals.length?Math.max(...vals):null;
+  const mr=ar.find(r=>parseFloat(r['Valor'])===mx);
+  return{fecha:lf,maxAcel:mx,maxPunto:mr?mr['Punto medicion']:'—',estado:mx!==null?getEstadoAcel(mx):'sin-dato'};
+}
+
+function initFilters(){
+  const tags=[...new Set([...allData.map(r=>r['Tag Equipo']).filter(Boolean),...EQUIPOS_EXTRA])].sort();
+  ['fi-bomba','c-bomba'].forEach(id=>{const s=document.getElementById(id);s.innerHTML='<option value="">— Seleccioná —</option>';tags.forEach(t=>s.innerHTML+=`<option value="${t}">${t}</option>`);if(id==='c-bomba')s.innerHTML+='<option value="__nuevo__">➕ Otro equipo (escribir)</option>';});
+  const dia=document.getElementById('c-dia');dia.innerHTML='';
+  for(let i=1;i<=31;i++)dia.innerHTML+=`<option value="${String(i).padStart(2,'0')}">${i}</option>`;
+  const hoy=new Date();
+  dia.value=String(hoy.getDate()).padStart(2,'0');
+  document.getElementById('c-mes').value=String(hoy.getMonth()+1).padStart(2,'0');
+  document.getElementById('c-anio').value=String(hoy.getFullYear());
+}
+
+function onBombaChange(){
+  const tag=document.getElementById('fi-bomba').value;
+  const ff=document.getElementById('fi-fecha');ff.innerHTML='<option value="">— Seleccioná —</option>';
+  if(!tag)return;
+  const rowsTag=allData.filter(r=>r['Tag Equipo']===tag);
+  const vistas=new Set();const claves=[];
+  rowsTag.forEach(r=>{const k=claveMed(r);if(k&&!vistas.has(k)){vistas.add(k);claves.push(k);}});
+  claves.sort((a,b)=>parseDate(b)-parseDate(a));
+  claves.forEach(k=>ff.innerHTML+=`<option value="${k}">${formatFechaHora(k)}</option>`);
+  if(claves.length){ff.value=claves[0];renderFicha();}
+}
+
+function switchTab(tab){
+  document.querySelectorAll('.nav-item').forEach(el=>el.classList.remove('active'));
+  document.getElementById('nav-'+tab).classList.add('active');
+  document.querySelectorAll('.view').forEach(p=>p.classList.remove('active'));
+  document.getElementById('page-'+tab).classList.add('active');
+  document.getElementById('fbar-general').style.display=tab==='general'?'block':'none';
+  document.getElementById('fbar-ficha').style.display=tab==='ficha'?'block':'none';
+}
+function irFicha(tag){document.getElementById('fi-bomba').value=tag;switchTab('ficha');onBombaChange();}
+
+function renderGeneral(){
+  const mostrar=document.getElementById('f-estado').value;
+  const tags=[...new Set(allData.map(r=>r['Tag Equipo']).filter(Boolean))].sort();
+  const bd=tags.map(tag=>({tag,...getLastMedicion(tag)}));
+  const cnt={critico:0,alerta:0,inicio:0,ok:0};
+  bd.forEach(b=>{if(cnt[b.estado]!==undefined)cnt[b.estado]++;});
+  ['critico','alerta','inicio','ok'].forEach(k=>document.getElementById('k-'+k).textContent=cnt[k]);
+  const filtradas=mostrar==='criticas'?bd.filter(b=>['critico','alerta','inicio'].includes(b.estado)).sort((a,b)=>(b.maxAcel||0)-(a.maxAcel||0)):bd.sort((a,b)=>(b.maxAcel||0)-(a.maxAcel||0));
+  document.getElementById('grid-title').textContent=mostrar==='criticas'?'⚠️ Bombas que Requieren Atención':'🏭 Estado de Todas las Bombas';
+  const eL={critico:'🔴 CRÍTICO',alerta:'🟡 ALERTA',inicio:'🟠 INICIO',ok:'✅ OK','sin-dato':'—'};
+  document.getElementById('bombas-grid').innerHTML=filtradas.length?filtradas.map(b=>`
+    <div class="bomba-card ${b.estado}" onclick="irFicha('${b.tag}')">
+      <div class="bomba-tag">${b.tag}</div>
+      <div class="bomba-val">${b.maxAcel!==null?b.maxAcel.toFixed(2):'—'}<span style="font-size:.6rem">g</span></div>
+      <div class="bomba-pto">${b.maxPunto||'—'}</div>
+      <div class="bomba-estado">${eL[b.estado]||'—'}</div>
+      <div class="bomba-fecha">${formatFecha(b.fecha)}</div>
+    </div>`).join(''):'<div class="no-data">✅ Todas en OK</div>';
+  const vd=tags.map(tag=>{
+    const rows=allData.filter(r=>r['Tag Equipo']===tag);if(!rows.length)return null;
+    const sorted=rows.slice().sort((a,b)=>parseDate(b['Fecha Medicion'])-parseDate(a['Fecha Medicion']));
+    const lf=sorted[0]['Fecha Medicion'];const lr=rows.filter(r=>sameDay(r['Fecha Medicion'],lf));
+    const vr=lr.filter(r=>String(r['Punto medicion']||'').includes('Veloc'));
+    const vals=vr.map(r=>parseFloat(r['Valor'])).filter(v=>!isNaN(v));const mx=vals.length?Math.max(...vals):null;
+    const mr=vr.find(r=>parseFloat(r['Valor'])===mx);
+    return{tag,fecha:lf,maxVeloc:mx,maxPunto:mr?mr['Punto medicion']:'—'};
+  }).filter(b=>b&&b.maxVeloc!==null&&b.maxVeloc>10).sort((a,b)=>b.maxVeloc-a.maxVeloc);
+  document.getElementById('bombas-veloc').innerHTML=vd.length?vd.map(b=>`
+    <div class="bomba-card" style="border-color:var(--blue);background:var(--blue-light)" onclick="irFicha('${b.tag}')">
+      <div class="bomba-tag">${b.tag}</div>
+      <div class="bomba-val" style="color:var(--blue)">${b.maxVeloc.toFixed(2)}<span style="font-size:.6rem">mm/s</span></div>
+      <div class="bomba-pto">${b.maxPunto||'—'}</div>
+      <div class="bomba-estado" style="color:var(--blue)">⚡ VELOC ALTA</div>
+      <div class="bomba-fecha">${formatFecha(b.fecha)}</div>
+    </div>`).join(''):'<div class="no-data">✅ Ninguna supera 10 mm/s</div>';
+  const rk=bd.filter(b=>b.maxAcel!==null).sort((a,b)=>b.maxAcel-a.maxAcel).slice(0,10);
+  const mx=rk[0]?.maxAcel||1;
+  document.getElementById('ranking').innerHTML=rk.map((b,i)=>`
+    <div class="rank-item">
+      <div class="rank-num">${i+1}</div>
+      <div class="rank-tag" title="${b.tag}">${b.tag}</div>
+      <div class="rank-bw"><div class="rank-b ${b.estado}" style="width:${b.maxAcel/mx*100}%"><span>${b.maxAcel.toFixed(2)}g</span></div></div>
+    </div>`).join('');
+  destroyChart('ch-estado');
+  charts['ch-estado']=new Chart(document.getElementById('ch-estado'),{
+    type:'doughnut',data:{labels:['OK','Inicio','Alerta','Crítico'],
+      datasets:[{data:[cnt.ok,cnt.inicio,cnt.alerta,cnt.critico],backgroundColor:['#16a34a','#ea580c','#ca8a04','#dc2626'],borderColor:'#ffffff',borderWidth:2}]},
+    options:{responsive:true,maintainAspectRatio:true,plugins:{legend:{position:'right',labels:{color:'#6b7280',font:{size:10},boxWidth:12,padding:6}}}}
+  });
+}
+
+function getPuntoVal(rows,num){
+  const r=rows.find(r=>{const pm=String(r['Punto medicion']||'').trim();return pm.startsWith(num+' ')||pm.startsWith('0'+num.replace(/^0/,'')+' ')||pm===num;});
+  if(!r)return null;const v=parseFloat(r['Valor']);return isNaN(v)?null:v;
+}
+
+function renderFicha(){
+  const tag=document.getElementById('fi-bomba').value;
+  const fechaVal=document.getElementById('fi-fecha').value;
+  const varF=document.getElementById('fi-var').value;
+  const content=document.getElementById('ficha-content');
+  if(!tag){content.innerHTML='<div class="no-data">Seleccioná una bomba.</div>';return;}
+  const rows=allData.filter(r=>r['Tag Equipo']===tag);
+  const fechaRows=fechaVal?rows.filter(r=>claveMed(r)===fechaVal):[];
+  function getP(num){return getPuntoVal(fechaRows,num);}
+  const velocBombaFicha=(()=>{const r=fechaRows.find(r=>{const v=r['Velocidad Bomba'];return v!==undefined&&v!==null&&v!=='';});return r?r['Velocidad Bomba']:null;})();
+  const obsFicha=(()=>{const r=fechaRows.find(r=>{const v=r['Observaciones'];return v!==undefined&&v!==null&&v!=='';});return r?r['Observaciones']:null;})();
+  const dec=esDecanter(tag);
+  const fechas=[...new Set(rows.map(r=>claveMed(r)).filter(Boolean))].sort((a,b)=>parseDate(a)-parseDate(b));
+  const dsAcel=seriesPorNumero(rows,fechas,esAcel);
+  const dsVeloc=seriesPorNumero(rows,fechas,esVeloc);
+  const mkIso=pairs=>[{id:'iso'+Math.random(),afterDraw(chart){const{ctx,chartArea:{left,right,top,bottom},scales:{y}}=chart;pairs.forEach(([val,col,lbl])=>{const yp=y.getPixelForValue(val);if(yp>=top&&yp<=bottom){ctx.save();ctx.setLineDash([5,4]);ctx.strokeStyle=col;ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(left,yp);ctx.lineTo(right,yp);ctx.stroke();ctx.fillStyle=col;ctx.font='10px DM Sans';ctx.fillText(lbl,right-40,yp-4);ctx.restore();}});}}];
+
+  function dot(x,y,num,tipo,sz=13){
+    const val=getP(num);const est=tipo==='Acel'?getEstadoAcel(val):getEstadoVeloc(val);
+    const col=tipo==='Acel'?colorAcel(est):colorVeloc(est);const txt=val!==null?val.toFixed(1):'—';
+    const sc=tipo==='Veloc'?'#2563eb':col;const fc=tipo==='Veloc'?'#dbeafe':col+'22';
+    return`<g><circle cx="${x}" cy="${y}" r="${sz}" fill="${fc}" stroke="${sc}" stroke-width="1.5"/>
+      <text x="${x}" y="${y-3}" text-anchor="middle" font-size="7.5" fill="#6b7280">${num}·${tipo==='Acel'?'A':'V'}</text>
+      <text x="${x}" y="${y+6}" text-anchor="middle" font-size="9" font-weight="bold" fill="${tipo==='Veloc'?'#2563eb':col}">${txt}</text></g>`;
+  }
+
+  function dotTemp(x,y,num,sz=13){
+    const val=getP(num);const txt=val!==null?val.toFixed(1):'—';
+    return`<g><circle cx="${x}" cy="${y}" r="${sz}" fill="#f3f4f6" stroke="#0f766e" stroke-width="1.5"/>
+      <text x="${x}" y="${y-3}" text-anchor="middle" font-size="7.5" fill="#6b7280">${num}·T</text>
+      <text x="${x}" y="${y+6}" text-anchor="middle" font-size="9" font-weight="bold" fill="#0f766e">${txt}</text></g>`;
+  }
+
+  function svgFichaDec(){
+    return`<svg viewBox="0 0 900 380" xmlns="http://www.w3.org/2000/svg" style="font-family:'DM Sans',sans-serif">
+      <rect width="900" height="380" fill="#f9fafb"/>
+      <!-- FILA SUPERIOR -->
+      <rect x="20" y="8" width="250" height="100" rx="6" fill="#f3f4f6" stroke="#d1d5db" stroke-width="1"/>
+      <text x="145" y="22" text-anchor="middle" font-size="10" font-weight="bold" fill="#6b7280">MOTOR (sup)</text>
+      <text x="35" y="44" font-size="8" fill="#9ca3af">Aceleración</text><text x="35" y="82" font-size="8" fill="#9ca3af">Velocidad</text>
+      ${dot(120,40,'01','Acel',12)}${dot(170,40,'03','Acel',12)}${dot(120,78,'02','Veloc',12)}${dot(170,78,'04','Veloc',12)}
+      <rect x="310" y="8" width="250" height="100" rx="6" fill="#f3f4f6" stroke="#d1d5db" stroke-width="1"/>
+      <text x="435" y="22" text-anchor="middle" font-size="10" font-weight="bold" fill="#6b7280">DESCARGA SALES (sup)</text>
+      <text x="325" y="44" font-size="8" fill="#9ca3af">Aceleración</text><text x="325" y="82" font-size="8" fill="#9ca3af">Velocidad</text>
+      ${dot(430,40,'09','Acel',12)}${dot(430,78,'10','Veloc',12)}
+      <rect x="600" y="8" width="250" height="100" rx="6" fill="#f3f4f6" stroke="#d1d5db" stroke-width="1"/>
+      <text x="725" y="22" text-anchor="middle" font-size="10" font-weight="bold" fill="#6b7280">DESCARGA GL. (sup)</text>
+      <text x="615" y="44" font-size="8" fill="#9ca3af">Aceleración</text><text x="615" y="82" font-size="8" fill="#9ca3af">Velocidad</text>
+      ${dot(720,40,'13','Acel',12)}${dot(720,78,'14','Veloc',12)}
+      <!-- CUERPO DECANTER -->
+      <rect x="60" y="170" width="70" height="40" rx="5" fill="#f3f4f6" stroke="#d1d5db" stroke-width="1.5"/>
+      <text x="95" y="194" text-anchor="middle" font-size="8" fill="#6b7280">MOTOR</text>
+      <line x1="130" y1="190" x2="180" y2="190" stroke="#9ca3af" stroke-width="3"/>
+      <rect x="180" y="155" width="440" height="70" rx="35" fill="#eef2f7" stroke="#d1d5db" stroke-width="2"/>
+      <ellipse cx="180" cy="190" rx="10" ry="35" fill="#e5e7eb" stroke="#d1d5db" stroke-width="1.5"/>
+      <path d="M 620 160 L 690 172 L 690 208 L 620 220 Z" fill="#e5e7eb" stroke="#d1d5db" stroke-width="1.5"/>
+      <line x1="220" y1="190" x2="580" y2="190" stroke="#cbd5e1" stroke-width="1.5" stroke-dasharray="6,5"/>
+      <text x="400" y="145" text-anchor="middle" font-size="9" fill="#6b7280" font-weight="bold">TAMBOR / TORNILLO DECANTER</text>
+      <text x="150" y="245" text-anchor="middle" font-size="7.5" fill="#0f766e">Rod. Tambor</text>
+      ${dotTemp(150,215,'19',12)}
+      <text x="735" y="150" text-anchor="middle" font-size="7.5" fill="#0f766e">Rod. Tambor</text>
+      ${dotTemp(735,168,'17',12)}
+      <text x="735" y="242" text-anchor="middle" font-size="7.5" fill="#0f766e">Reductor</text>
+      ${dotTemp(735,215,'18',12)}
+      <!-- FILA INFERIOR -->
+      <rect x="20" y="268" width="250" height="100" rx="6" fill="#f3f4f6" stroke="#d1d5db" stroke-width="1"/>
+      <text x="145" y="282" text-anchor="middle" font-size="10" font-weight="bold" fill="#6b7280">MOTOR (inf)</text>
+      <text x="35" y="304" font-size="8" fill="#9ca3af">Aceleración</text><text x="35" y="342" font-size="8" fill="#9ca3af">Velocidad</text>
+      ${dot(120,300,'05','Acel',12)}${dot(170,300,'07','Acel',12)}${dot(120,338,'06','Veloc',12)}${dot(170,338,'08','Veloc',12)}
+      <rect x="310" y="268" width="250" height="100" rx="6" fill="#f3f4f6" stroke="#d1d5db" stroke-width="1"/>
+      <text x="435" y="282" text-anchor="middle" font-size="10" font-weight="bold" fill="#6b7280">DESCARGA SALES (inf)</text>
+      <text x="325" y="304" font-size="8" fill="#9ca3af">Aceleración</text><text x="325" y="342" font-size="8" fill="#9ca3af">Velocidad</text>
+      ${dot(430,300,'11','Acel',12)}${dot(430,338,'12','Veloc',12)}
+      <rect x="600" y="268" width="250" height="100" rx="6" fill="#f3f4f6" stroke="#d1d5db" stroke-width="1"/>
+      <text x="725" y="282" text-anchor="middle" font-size="10" font-weight="bold" fill="#6b7280">DESCARGA GL. (inf)</text>
+      <text x="615" y="304" font-size="8" fill="#9ca3af">Aceleración</text><text x="615" y="342" font-size="8" fill="#9ca3af">Velocidad</text>
+      ${dot(720,300,'15','Acel',12)}${dot(720,338,'16','Veloc',12)}
+    </svg>`;
+  }
+
+  content.innerHTML=`
+    <div class="esquema-wrap">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px">
+        <div><div class="esquema-title">📍 ${tag} — Puntos de Medición</div><div class="esquema-fecha">Medición: ${formatFechaHora(fechaVal)}</div></div>
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+          <button class="btn btn-orange" onclick="abrirExportPDF()">📄 Exportar tendencias PDF</button>
+          <div style="background:var(--blue-light);border:1px solid #bfdbfe;border-radius:var(--radius-sm);padding:10px 16px;text-align:center;min-width:130px">
+            <div style="font-size:11px;color:var(--text4);text-transform:uppercase;font-weight:600;margin-bottom:4px">⚙️ Veloc. Bomba</div>
+            <div style="font-size:22px;font-weight:700;color:var(--blue)">${velocBombaFicha!==null?velocBombaFicha+'%':'—'}</div>
+          </div>
+        </div>
+      </div>
+      ${obsFicha?`<div style="background:var(--surface2);border:1px solid var(--border);border-left:3px solid var(--accent);border-radius:var(--radius-sm);padding:8px 12px;margin-bottom:12px;font-size:12px;color:var(--text2)"><strong style="color:var(--text3)">📝 Observaciones:</strong> ${obsFicha}</div>`:''}
+      <div class="svg-wrap">${dec?svgFichaDec():`<svg viewBox="0 0 900 320" xmlns="http://www.w3.org/2000/svg" style="font-family:'DM Sans',sans-serif">
+        <rect width="900" height="320" fill="#f9fafb"/>
+        <line x1="10" y1="110" x2="890" y2="110" stroke="#e5e7eb" stroke-width="1"/>
+        <rect x="20" y="8" width="200" height="95" rx="6" fill="#f3f4f6" stroke="#d1d5db" stroke-width="1"/>
+        <text x="120" y="22" text-anchor="middle" font-size="10" font-weight="bold" fill="#6b7280">MOTOR</text>
+        <text x="45" y="40" font-size="8" fill="#9ca3af">Aceleración</text><text x="45" y="75" font-size="8" fill="#9ca3af">Velocidad</text>
+        ${dot(130,35,'01','Acel',12)}${dot(175,35,'02','Acel',12)}${dot(130,70,'05','Veloc',12)}${dot(175,70,'06','Veloc',12)}
+        <rect x="390" y="8" width="200" height="95" rx="6" fill="#f3f4f6" stroke="#d1d5db" stroke-width="1"/>
+        <text x="490" y="22" text-anchor="middle" font-size="10" font-weight="bold" fill="#6b7280">BOMBA</text>
+        <text x="410" y="40" font-size="8" fill="#9ca3af">Aceleración</text><text x="410" y="75" font-size="8" fill="#9ca3af">Velocidad</text>
+        ${dot(500,35,'03','Acel',12)}${dot(545,35,'04','Acel',12)}${dot(500,70,'07','Veloc',12)}${dot(545,70,'08','Veloc',12)}
+        <line x1="90" y1="175" x2="760" y2="175" stroke="#d1d5db" stroke-width="3"/>
+        <rect x="90" y="130" width="130" height="90" rx="5" fill="#f3f4f6" stroke="#d1d5db" stroke-width="1.5"/>
+        <ellipse cx="90" cy="175" rx="12" ry="45" fill="#e5e7eb" stroke="#d1d5db" stroke-width="1.5"/>
+        <ellipse cx="220" cy="175" rx="12" ry="45" fill="#e5e7eb" stroke="#d1d5db" stroke-width="1.5"/>
+        <rect x="234" y="163" width="26" height="24" rx="3" fill="#e5e7eb" stroke="#2563eb" stroke-width="1" stroke-dasharray="4,2"/>
+        <path d="M 270 143 L 480 143 L 510 158 L 510 192 L 480 207 L 270 207 Z" fill="#f3f4f6" stroke="#d1d5db" stroke-width="1.5"/>
+        <circle cx="385" cy="175" r="26" fill="#e5e7eb" stroke="#d1d5db" stroke-width="1"/>
+        <circle cx="385" cy="175" r="9" fill="#f9fafb" stroke="#9ca3af" stroke-width="1"/>
+        <rect x="520" y="140" width="85" height="70" rx="5" fill="#f3f4f6" stroke="#d1d5db" stroke-width="1.5"/>
+        <rect x="605" y="155" width="35" height="40" rx="3" fill="#e5e7eb" stroke="#d1d5db" stroke-width="1.5"/>
+        <rect x="555" y="105" width="18" height="38" rx="3" fill="#e5e7eb" stroke="#d1d5db" stroke-width="1.5"/>
+        <rect x="640" y="162" width="45" height="26" rx="3" fill="#e5e7eb" stroke="#d1d5db" stroke-width="1.5"/>
+        <line x1="10" y1="232" x2="890" y2="232" stroke="#e5e7eb" stroke-width="1"/>
+        <rect x="10" y="238" width="145" height="75" rx="5" fill="#f3f4f6" stroke="#d1d5db" stroke-width="1"/>
+        <text x="82" y="250" text-anchor="middle" font-size="9" font-weight="bold" fill="#6b7280">MOTOR</text>
+        <text x="15" y="264" font-size="7.5" fill="#9ca3af">Acel</text><text x="15" y="294" font-size="7.5" fill="#9ca3af">Veloc</text>
+        ${dot(65,260,'09','Acel',11)}${dot(110,260,'10','Acel',11)}${dot(65,290,'16','Veloc',11)}${dot(110,290,'17','Veloc',11)}
+        <rect x="163" y="238" width="190" height="75" rx="5" fill="#f3f4f6" stroke="#d1d5db" stroke-width="1"/>
+        <text x="258" y="250" text-anchor="middle" font-size="9" font-weight="bold" fill="#6b7280">AXIAL</text>
+        <text x="168" y="264" font-size="7.5" fill="#9ca3af">Acel</text><text x="168" y="294" font-size="7.5" fill="#9ca3af">Veloc</text>
+        ${dot(210,260,'11','Acel',11)}${dot(255,260,'12','Acel',11)}${dot(210,290,'18','Veloc',11)}${dot(255,290,'19','Veloc',11)}
+        <rect x="361" y="238" width="190" height="75" rx="5" fill="#f3f4f6" stroke="#d1d5db" stroke-width="1"/>
+        <text x="456" y="250" text-anchor="middle" font-size="9" font-weight="bold" fill="#6b7280">BOMBA</text>
+        <text x="366" y="264" font-size="7.5" fill="#9ca3af">Acel</text><text x="366" y="294" font-size="7.5" fill="#9ca3af">Veloc</text>
+        ${dot(408,260,'13','Acel',11)}${dot(453,260,'14','Acel',11)}${dot(408,290,'20','Veloc',11)}${dot(453,290,'21','Veloc',11)}
+        <rect x="559" y="238" width="140" height="75" rx="5" fill="#f3f4f6" stroke="#d1d5db" stroke-width="1"/>
+        <text x="629" y="250" text-anchor="middle" font-size="9" font-weight="bold" fill="#6b7280">VOLUTA</text>
+        <text x="564" y="264" font-size="7.5" fill="#9ca3af">Acel</text><text x="564" y="294" font-size="7.5" fill="#9ca3af">Veloc</text>
+        ${dot(610,260,'15','Acel',11)}${dot(610,290,'22','Veloc',11)}
+        <circle cx="720" cy="255" r="5" fill="#dcfce7" stroke="#16a34a" stroke-width="1.5"/><text x="730" y="259" font-size="9" fill="#6b7280">OK</text>
+        <circle cx="755" cy="255" r="5" fill="#fff7ed" stroke="#ea580c" stroke-width="1.5"/><text x="765" y="259" font-size="9" fill="#6b7280">Inicio</text>
+        <circle cx="720" cy="274" r="5" fill="#fef9c3" stroke="#ca8a04" stroke-width="1.5"/><text x="730" y="278" font-size="9" fill="#6b7280">Alerta</text>
+        <circle cx="755" cy="274" r="5" fill="#fee2e2" stroke="#dc2626" stroke-width="1.5"/><text x="765" y="278" font-size="9" fill="#6b7280">Crítico</text>
+        <circle cx="720" cy="293" r="5" fill="#dbeafe" stroke="#2563eb" stroke-width="1.5"/><text x="730" y="297" font-size="9" fill="#6b7280">Veloc</text>
+      </svg>`}</div>
+    </div>
+    <div class="g2">
+      <div class="card" style="margin-bottom:0"><h3>📈 Aceleración (g)</h3><canvas id="ch-tend-acel" style="max-height:220px"></canvas></div>
+      <div class="card" style="margin-bottom:0"><h3>📈 Velocidad (mm/s)</h3><canvas id="ch-tend-veloc" style="max-height:220px"></canvas></div>
+    </div>
+    <div class="card" style="margin-top:12px">
+      <h3>📋 Historial</h3>
+      <div class="tbl-wrap"><table>
+        <thead><tr><th>Fecha</th><th>Punto</th><th>Tipo</th><th>Valor</th><th>Estado</th><th>Operador</th><th>Veloc Bomba</th><th>Observaciones</th></tr></thead>
+        <tbody>${rows.slice().sort((a,b)=>parseDate(b['Fecha Medicion'])-parseDate(a['Fecha Medicion']))
+          .filter(r=>varF==='ALL'||String(r['Punto medicion']||'').includes(varF))
+          .map(r=>{
+            const v=parseFloat(r['Valor']);const pm=String(r['Punto medicion']||'');
+            const et=pm.includes('Temp');const ea=pm.includes('Acel');
+            let cls,lbl,tipoLbl;
+            if(et){cls='';lbl='🌡️';tipoLbl='Temp';}
+            else{const est=ea?getEstadoAcel(v):getEstadoVeloc(v);
+              cls=ea?{critico:'critico-t',alerta:'alerta-t',inicio:'inicio-t',ok:'ok-t','sin-dato':''}[est]:'info-t';
+              lbl=ea?{critico:'🔴',alerta:'🟡',inicio:'🟠',ok:'✅','sin-dato':'—'}[est]:'ℹ️';
+              tipoLbl=ea?'Acel':'Veloc';}
+            const vb=r['Velocidad Bomba']!==undefined&&r['Velocidad Bomba']!==''?r['Velocidad Bomba']+'%':'—';
+            const obsR=r['Observaciones']!==undefined&&r['Observaciones']!==''?r['Observaciones']:'—';
+            return`<tr><td>${formatFechaHora(claveMed(r))}</td><td style="font-family:'DM Mono',monospace;font-size:11px">${pm||'—'}</td>
+              <td>${tipoLbl}</td><td class="${cls}">${!isNaN(v)?v.toFixed(2):'—'}</td>
+              <td class="${cls}">${lbl}</td><td>${r['Operador']||'—'}</td><td style="color:var(--blue)">${vb}</td>
+              <td style="font-size:11px;color:var(--text3);max-width:200px">${obsR}</td></tr>`;
+          }).join('')}
+        </tbody></table></div></div>`;
+
+  const mkChart=(id,ds,titulo,iso)=>{
+    destroyChart(id);
+    charts[id]=new Chart(document.getElementById(id),{
+      type:'line',data:{labels:fechas.map(f=>formatFechaHora(f)),datasets:ds},
+      options:{responsive:true,maintainAspectRatio:true,
+        plugins:{legend:{position:'bottom',labels:{color:'#6b7280',font:{size:9},boxWidth:10,padding:5}}},
+        scales:{
+          x:{ticks:{color:'#9ca3af',font:{size:9},maxRotation:45},grid:{color:'#f3f4f6'}},
+          y:{ticks:{color:'#9ca3af',font:{size:10}},grid:{color:'#f3f4f6'},beginAtZero:true,
+            title:{display:true,text:titulo,color:'#6b7280',font:{size:10}}}
+        }
+      },plugins:iso
+    });
+  };
+  mkChart('ch-tend-acel',dsAcel,'Aceleración (g)',mkIso([[A_INICIO,'#ea580c','1.5g'],[A_ALERTA,'#ca8a04','2.5g'],[A_CRITICO,'#dc2626','5g']]));
+  mkChart('ch-tend-veloc',dsVeloc,'Velocidad (mm/s)',mkIso([[V_ALERTA,'#ca8a04','2.3'],[V_PELIGRO,'#dc2626','4.5']]));
+}
+
+// CARGA
+let valoresCarga={},puntoActivo=null;
+
+function ptoHtml(p){
+  const val=valoresCarga[p.num];
+  let col,txt=val!==undefined?parseFloat(val).toFixed(2):'—';
+  if(p.tipo==='Temp'){
+    col=val!==undefined?'#0f766e':'#9ca3af';
+  }else{
+    const est=val!==undefined?(p.tipo==='Acel'?getEstadoAcel(val):getEstadoVeloc(val)):'sin-dato';
+    col=p.tipo==='Acel'?colorAcel(est):colorVeloc(est);
+  }
+  const ini=p.tipo==='Acel'?'A':(p.tipo==='Veloc'?'V':'T');
+  return`<div class="pto" style="border-color:${col};background:${col}18;${val!==undefined?'box-shadow:0 0 8px '+col+'33':''}"
+    onclick="abrirPopup('${p.num}','${p.tipo}',this)">
+    <span class="pn">${p.num}·${ini}</span>
+    <span class="pv" style="color:${col}">${txt}</span>
+  </div>`;
+}
+
+function renderCarga(){
+  const dec=esDecanter(cargaTagActual());
+  const pumpEl=document.getElementById('carga-pump');
+  const decEl=document.getElementById('carga-decanter');
+  if(pumpEl&&decEl){pumpEl.style.display=dec?'none':'block';decEl.style.display=dec?'block':'none';}
+  const mapa=dec?PUNTOS_DEC:PUNTOS;
+  const total=dec?TODOS_PUNTOS_DEC.length:22;
+  const cargados=Object.keys(valoresCarga).length;
+  const el=document.getElementById('c-counter');
+  if(el)el.innerHTML=`<span style="color:${cargados===total?'var(--green)':'var(--blue)'}">${cargados}/${total} cargados</span>`;
+  Object.entries(mapa).forEach(([zonaId,pts])=>{
+    const container=document.getElementById(zonaId);if(!container)return;
+    container.innerHTML=pts.map(ptoHtml).join('');
+  });
+}
+
+function cargaTagActual(){
+  const sel=document.getElementById('c-bomba').value;
+  if(sel==='__nuevo__'){const n=document.getElementById('c-bomba-nuevo');return n?n.value.trim().toUpperCase():'';}
+  return sel;
+}
+function onCargaEquipoChange(){
+  const esNuevo=document.getElementById('c-bomba').value==='__nuevo__';
+  const n=document.getElementById('c-bomba-nuevo');
+  if(n){n.style.display=esNuevo?'inline-block':'none';if(!esNuevo)n.value='';}
+  valoresCarga={};renderCarga();
+}
+
+function abrirPopup(num,tipo,el){
+  puntoActivo={num,tipo};
+  document.getElementById('vp-titulo').textContent=`Punto ${num}`;
+  document.getElementById('vp-tipo').textContent=tipo==='Acel'?'⚡ Aceleración (g)':(tipo==='Temp'?'🌡️ Temperatura (°C)':'🌊 Velocidad (mm/s)');
+  const inp=document.getElementById('vp-input');
+  inp.value=valoresCarga[num]!==undefined?valoresCarga[num]:'';
+  const popup=document.getElementById('valor-popup');
+  popup.style.display='block';document.getElementById('vp-overlay').style.display='block';
+  const rect=el.getBoundingClientRect();const pw=220,ph=170;
+  let top=rect.bottom+window.scrollY+8,left=rect.left+window.scrollX+rect.width/2-pw/2;
+  if(rect.bottom+ph>window.innerHeight)top=rect.top+window.scrollY-ph-8;
+  if(left<8)left=8;if(left+pw>window.innerWidth-8)left=window.innerWidth-pw-8;
+  popup.style.top=top+'px';popup.style.left=left+'px';
+  setTimeout(()=>inp.focus(),50);
+}
+function confirmarValor(){
+  if(!puntoActivo)return;
+  const val=parseFloat(document.getElementById('vp-input').value);
+  if(!isNaN(val)&&val>=0){valoresCarga[puntoActivo.num]=val;renderCarga();}
+  cerrarPopup();
+}
+function cerrarPopup(){
+  document.getElementById('valor-popup').style.display='none';
+  document.getElementById('vp-overlay').style.display='none';
+  puntoActivo=null;
+}
+function limpiarCarga(){valoresCarga={};document.getElementById('c-bomba').value='';const n=document.getElementById('c-bomba-nuevo');if(n){n.value='';n.style.display='none';}renderCarga();document.getElementById('carga-msg').textContent='';const o=document.getElementById('c-observaciones');if(o)o.value='';}
+
+async function guardarCarga(){
+  const tag=cargaTagActual();
+  const dia=document.getElementById('c-dia').value;const mes=document.getElementById('c-mes').value;const anio=document.getElementById('c-anio').value;
+  const op=document.getElementById('c-operador').value.trim();
+  const velocBomba=document.getElementById('c-veloc-bomba').value;
+  const obs=document.getElementById('c-observaciones').value.trim();
+  const ahora=new Date();const hora=`${String(ahora.getHours()).padStart(2,'0')}:${String(ahora.getMinutes()).padStart(2,'0')}`;
+  const msg=document.getElementById('carga-msg');
+  if(!tag){msg.style.color='var(--red)';msg.textContent='❌ Seleccioná equipo';return;}
+  if(!op){msg.style.color='var(--red)';msg.textContent='❌ Ingresá operador';return;}
+  if(!Object.keys(valoresCarga).length){msg.style.color='var(--red)';msg.textContent='❌ Sin valores';return;}
+  const fechaStr=hora?`${dia}/${mes}/${anio} ${hora}`:`${dia}/${mes}/${anio}`;
+  const dec=esDecanter(tag);
+  const listaPuntos=dec?TODOS_PUNTOS_DEC:TODOS_PUNTOS;
+  const zonaMap=dec?ZONA_MAP_DEC:{'01':'MOTOR','02':'MOTOR','05':'MOTOR','06':'MOTOR','03':'BOMBA','04':'BOMBA','07':'BOMBA','08':'BOMBA',
+    '09':'MOTOR','10':'MOTOR','16':'MOTOR','17':'MOTOR','11':'MOTOR AX','12':'MOTOR AX','18':'MOTOR AX','19':'MOTOR AX',
+    '13':'BOMBA','14':'BOMBA','20':'BOMBA','21':'BOMBA','15':'VOLUTA','22':'VOLUTA'};
+  const filas=listaPuntos.filter(p=>valoresCarga[p.num]!==undefined).map(p=>({
+    'Tag Equipo':tag,'Fecha Medicion':fechaStr,'Operador':op,
+    'Punto medicion':`${p.num} (${p.tipo}) ${zonaMap[p.num]||''}`,
+    'Valor':valoresCarga[p.num],'Archivo Origen':'Dashboard Web',
+    'Velocidad Bomba':velocBomba||'',
+    'Observaciones':obs||''
+  }));
+  msg.style.color='var(--text3)';msg.textContent='Guardando...';
+  try{
+    const r=await fetch(API_POST,{method:'POST',body:JSON.stringify({filas})});
+    const res=await r.json();
+    if(res.ok){msg.style.color='var(--green)';msg.textContent=`✅ ${res.guardadas} puntos guardados`;limpiarCarga();setTimeout(()=>loadData(),2000);}
+    else{msg.style.color='var(--red)';msg.textContent='❌ '+res.error;}
+  }catch(e){msg.style.color='var(--red)';msg.textContent='❌ Error de conexión';}
+}
+
+// ===== EXPORTAR TENDENCIAS A PDF =====
+function fechasEquipo(tag){
+  const rows=allData.filter(r=>r['Tag Equipo']===tag);
+  const seen=new Set(),out=[];
+  rows.forEach(r=>{const k=claveMed(r);if(k&&!seen.has(k)){seen.add(k);out.push(k);}});
+  return out.sort((a,b)=>parseDate(a)-parseDate(b));
+}
+function toInputDate(s){const d=parseDate(s);return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;}
+function abrirExportPDF(){
+  const tag=document.getElementById('fi-bomba').value;
+  if(!tag){alert('Seleccioná un equipo primero.');return;}
+  const fs=fechasEquipo(tag);
+  if(fs.length){document.getElementById('pdf-desde').value=toInputDate(fs[0]);document.getElementById('pdf-hasta').value=toInputDate(fs[fs.length-1]);}
+  document.getElementById('pdf-msg').textContent='';
+  document.getElementById('pdf-popup').style.display='block';
+  document.getElementById('pdf-overlay').style.display='block';
+}
+function cerrarExportPDF(){document.getElementById('pdf-popup').style.display='none';document.getElementById('pdf-overlay').style.display='none';}
+// Agrupa las tendencias por NÚMERO de punto (01,02,03...) sin importar el texto de zona,
+// así el mismo punto físico es una sola línea continua aunque los nombres varíen entre cargas.
+function numeroPunto(p){const m=String(p||'').match(/(\d+)/);return m?String(parseInt(m[1],10)):null;}
+const esAcel=p=>p.includes('Acel');
+const esVeloc=p=>p.includes('Veloc');
+function seriesPorNumero(rows,fechas,esTipo){
+  const nums=[...new Set(rows.filter(r=>esTipo(String(r['Punto medicion']||''))).map(r=>numeroPunto(r['Punto medicion'])).filter(Boolean))].sort((a,b)=>+a-+b);
+  return nums.slice(0,24).map((num,i)=>({
+    label:`Pto ${num.padStart(2,'0')}`,
+    data:fechas.map(f=>{
+      const r=rows.find(rr=>claveMed(rr)===f&&esTipo(String(rr['Punto medicion']||''))&&numeroPunto(rr['Punto medicion'])===num);
+      if(!r)return null;const v=parseFloat(r['Valor']);return isNaN(v)?null:v;
+    }),
+    borderColor:CHART_COLORS[i%CHART_COLORS.length],backgroundColor:'transparent',tension:.3,pointRadius:3,borderWidth:2,spanGaps:true
+  }));
+}
+function buildTrendData(tag,dDesde,dHasta){
+  const rows=allData.filter(r=>r['Tag Equipo']===tag);
+  const fechas=fechasEquipo(tag).filter(f=>{const d=parseDate(f);return d>=dDesde&&d<=dHasta;});
+  return {fechas,dsA:seriesPorNumero(rows,fechas,esAcel),dsV:seriesPorNumero(rows,fechas,esVeloc)};
+}
+function isoLinesPDF(pairs){return [{id:'isopdf'+Math.random(),afterDraw(chart){const{ctx,chartArea:{left,right,top,bottom},scales:{y}}=chart;pairs.forEach(([val,col,lbl])=>{const yp=y.getPixelForValue(val);if(yp>=top&&yp<=bottom){ctx.save();ctx.setLineDash([6,5]);ctx.strokeStyle=col;ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(left,yp);ctx.lineTo(right,yp);ctx.stroke();ctx.fillStyle=col;ctx.font='14px DM Sans';ctx.fillText(lbl,right-60,yp-6);ctx.restore();}});}}];}
+function renderChartImg(labels,datasets,titulo,pairs){
+  const canvas=document.createElement('canvas');canvas.width=1200;canvas.height=560;
+  canvas.style.position='fixed';canvas.style.left='-9999px';canvas.style.top='0';
+  document.body.appendChild(canvas);
+  const ch=new Chart(canvas,{type:'line',data:{labels,datasets},
+    options:{responsive:false,animation:false,devicePixelRatio:2,
+      plugins:{legend:{position:'bottom',labels:{color:'#374151',font:{size:14},boxWidth:14,padding:8}},
+        title:{display:true,text:titulo,color:'#111827',font:{size:20,weight:'bold'}}},
+      scales:{x:{ticks:{color:'#374151',font:{size:12},maxRotation:45},grid:{color:'#eef0f3'}},
+        y:{beginAtZero:true,ticks:{color:'#374151',font:{size:13}},grid:{color:'#eef0f3'}}}},
+    plugins:isoLinesPDF(pairs)});
+  const img=canvas.toDataURL('image/png',1.0);
+  ch.destroy();document.body.removeChild(canvas);
+  return img;
+}
+async function generarPDF(){
+  const tag=document.getElementById('fi-bomba').value;
+  const dv=document.getElementById('pdf-desde').value,hv=document.getElementById('pdf-hasta').value;
+  const msg=document.getElementById('pdf-msg');
+  if(!dv||!hv){msg.style.color='var(--red)';msg.textContent='Elegí ambas fechas.';return;}
+  const dDesde=new Date(dv+'T00:00:00'),dHasta=new Date(hv+'T23:59:59');
+  if(dDesde>dHasta){msg.style.color='var(--red)';msg.textContent='La fecha inicio es posterior a la fin.';return;}
+  const {fechas,dsA,dsV}=buildTrendData(tag,dDesde,dHasta);
+  if(!fechas.length){msg.style.color='var(--red)';msg.textContent='No hay mediciones en ese rango.';return;}
+  if(!window.jspdf){msg.style.color='var(--red)';msg.textContent='No cargó la librería PDF (revisá tu conexión).';return;}
+  msg.style.color='var(--text3)';msg.textContent='Generando PDF...';
+  await new Promise(r=>setTimeout(r,60));
+  const labels=fechas.map(f=>formatFechaHora(f));
+  const imgA=renderChartImg(labels,dsA,'Tendencia de Aceleración (g)',[[A_INICIO,'#ea580c','1.5g'],[A_ALERTA,'#ca8a04','2.5g'],[A_CRITICO,'#dc2626','5g']]);
+  const imgV=renderChartImg(labels,dsV,'Tendencia de Velocidad (mm/s)',[[V_ALERTA,'#ca8a04','2.3'],[V_PELIGRO,'#dc2626','4.5']]);
+  const {jsPDF}=window.jspdf;
+  const pdf=new jsPDF({orientation:'landscape',unit:'mm',format:'a4'});
+  const rango=`${formatFechaHora(fechas[0])} a ${formatFechaHora(fechas[fechas.length-1])}`;
+  const pagina=(subt,img)=>{
+    pdf.setFontSize(15);pdf.setTextColor(17,24,39);pdf.text(`Tendencias — ${tag}`,14,15);
+    pdf.setFontSize(11);pdf.setTextColor(107,114,128);pdf.text(subt,14,22);
+    pdf.text(`Rango: ${rango}  ·  ${fechas.length} medicion${fechas.length===1?'':'es'}`,14,28);
+    const w=270,h=w*560/1200;pdf.addImage(img,'PNG',(297-w)/2,34,w,h);
+  };
+  pagina('Aceleración',imgA);
+  pdf.addPage();
+  pagina('Velocidad',imgV);
+  pdf.save(`Tendencias_${tag.replace(/\s+/g,'_')}_${dv}_a_${hv}.pdf`);
+  msg.style.color='var(--green)';msg.textContent='✅ PDF generado';
+  setTimeout(cerrarExportPDF,900);
+}
+
+function destroyChart(id){if(charts[id]){charts[id].destroy();delete charts[id];}}
+
+// PORTAL: leer usuario y rol de URL
+(function(){
+  var params=new URLSearchParams(window.location.search);
+  var usuario=params.get('usuario')||'';
+  var rol=params.get('rol')||'';
+  if(usuario&&rol){
+    document.getElementById('user-pill').style.display='flex';
+    document.getElementById('user-name-top').textContent=usuario;
+    document.getElementById('user-rol-top').textContent=rol;
+    var r=rol.toLowerCase();
+    var esSoloLectura=r.includes('operador_electrico')||r.includes('electrico');
+    if(esSoloLectura){
+      window.addEventListener('DOMContentLoaded',function(){
+        document.getElementById('nav-carga').classList.add('locked');
+        document.getElementById('nav-carga').title='Solo lectura — tu rol no permite cargar datos';
+      });
+    }
+  }
+})();
+
+setInterval(loadData,60*60*1000);
+loadData();
+</script>
+</body>
+</html>

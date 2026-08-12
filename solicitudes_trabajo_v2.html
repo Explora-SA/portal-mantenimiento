@@ -1,0 +1,1186 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Solicitudes de Trabajo — Planta Explora</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap');
+:root{
+  --bg:#f4f5f7;
+  --surface:#ffffff;
+  --surface2:#f9fafb;
+  --border:#e5e7eb;
+  --border2:#d1d5db;
+  --text:#111827;
+  --text2:#374151;
+  --text3:#6b7280;
+  --text4:#9ca3af;
+  --accent:#e67e22;
+  --accent-light:#fff3e6;
+  --accent-hover:#d35400;
+  --green:#16a34a;
+  --green-light:#dcfce7;
+  --red:#dc2626;
+  --red-light:#fee2e2;
+  --blue:#2563eb;
+  --blue-light:#dbeafe;
+  --yellow:#ca8a04;
+  --yellow-light:#fef9c3;
+  --sidebar-w:220px;
+  --topbar-h:56px;
+  --radius:10px;
+  --radius-sm:6px;
+  --shadow:0 1px 3px rgba(0,0,0,.08),0 1px 2px rgba(0,0,0,.06);
+  --shadow-md:0 4px 16px rgba(0,0,0,.08),0 2px 6px rgba(0,0,0,.05);
+  --shadow-lg:0 10px 40px rgba(0,0,0,.12);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);font-family:'DM Sans',sans-serif;color:var(--text);min-height:100vh;font-size:14px}
+
+/* ── TOPBAR ── */
+.topbar{background:var(--surface);border-bottom:1px solid var(--border);padding:0 24px 0 0;display:flex;justify-content:space-between;align-items:center;height:var(--topbar-h);position:fixed;top:0;left:0;right:0;z-index:200;box-shadow:var(--shadow)}
+.topbar-brand{width:var(--sidebar-w);height:100%;display:flex;align-items:center;padding:0 20px;background:var(--surface);border-right:1px solid var(--border);flex-shrink:0}
+.plant{font-size:10px;color:var(--text4);text-transform:uppercase;letter-spacing:1.5px;font-weight:600}
+.title{font-size:13px;font-weight:700;color:var(--text);display:flex;align-items:center;gap:7px;margin-top:2px}
+.title-dot{width:9px;height:9px;background:var(--accent);border-radius:2px;transform:rotate(8deg);flex-shrink:0}
+.topbar-right{display:flex;align-items:center;gap:14px}
+.last-update{font-size:11px;color:var(--text4);text-align:right}
+.last-update span{color:var(--green);font-weight:600}
+
+/* ── LOGIN BAR ── */
+.login-bar{display:flex;align-items:center;gap:10px;background:var(--accent-light);border:1px solid #fed7aa;border-radius:var(--radius-sm);padding:6px 14px}
+.login-bar.editor{background:var(--green-light);border-color:#bbf7d0}
+.login-usuario{font-size:12px;font-weight:700;color:var(--accent)}
+.login-bar.editor .login-usuario{color:var(--green)}
+.login-rol{font-size:10px;color:var(--text4);text-transform:uppercase;letter-spacing:1px;font-weight:600}
+.btn-login{background:var(--accent);color:#fff;border:none;padding:6px 16px;border-radius:var(--radius-sm);font-size:12px;cursor:pointer;font-weight:600;font-family:inherit}
+.btn-login:hover{background:var(--accent-hover)}
+.btn-logout{background:none;border:1px solid var(--border2);color:var(--text3);padding:5px 12px;border-radius:20px;font-size:12px;cursor:pointer;font-family:inherit}
+.btn-logout:hover{border-color:var(--red);color:var(--red)}
+
+/* ── LAYOUT ── */
+.layout{display:flex;margin-top:var(--topbar-h);min-height:calc(100vh - var(--topbar-h))}
+
+/* ── SIDEBAR ── */
+.sidebar{width:var(--sidebar-w);background:var(--surface);border-right:1px solid var(--border);position:fixed;top:var(--topbar-h);left:0;bottom:0;overflow-y:auto;z-index:100;display:flex;flex-direction:column;box-shadow:2px 0 8px rgba(0,0,0,.04)}
+.sidebar-section{padding:10px 0 4px}
+.sidebar-label{font-size:10px;color:var(--text4);text-transform:uppercase;letter-spacing:1.2px;font-weight:700;padding:0 16px 6px}
+.nav-item{display:flex;align-items:center;gap:10px;padding:9px 16px;cursor:pointer;border:none;background:transparent;color:var(--text3);font-size:13px;font-weight:500;font-family:inherit;width:100%;text-align:left;transition:all .15s;position:relative}
+.nav-item:hover{background:var(--surface2);color:var(--text)}
+.nav-item.active{background:var(--accent-light);color:var(--accent);font-weight:600}
+.nav-item.active::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--accent);border-radius:0 2px 2px 0}
+.nav-icon{font-size:15px;width:20px;text-align:center;flex-shrink:0}
+.sidebar-divider{height:1px;background:var(--border);margin:6px 14px}
+
+/* ── MAIN ── */
+.main{margin-left:var(--sidebar-w);flex:1;padding:24px 28px;overflow-x:hidden}
+.view{display:none}.view.active{display:block}
+
+/* ── PAGE HEADER ── */
+.page-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:10px}
+.page-title{font-size:18px;font-weight:700;color:var(--text)}
+
+/* ── FORM CARD ── */
+.form-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);margin-bottom:20px;overflow:hidden}
+.form-card-header{background:var(--surface2);padding:12px 18px;display:flex;align-items:center;gap:10px;cursor:pointer;user-select:none;border-bottom:1px solid var(--border)}
+.form-card-title{font-size:12px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:1.5px;flex:1}
+.form-card-arrow{color:var(--text4);font-size:12px;transition:transform .2s}
+.form-body{padding:20px 18px}
+.form-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;margin-bottom:16px}
+.form-field label{font-size:11px;color:var(--text3);display:block;margin-bottom:4px;font-weight:600;text-transform:uppercase;letter-spacing:.5px}
+.form-field input,.form-field select,.form-field textarea{width:100%;background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:8px 11px;border-radius:var(--radius-sm);font-size:13px;font-family:inherit;transition:border-color .15s}
+.form-field input:focus,.form-field select:focus,.form-field textarea:focus{outline:none;border-color:var(--accent);background:#fff;box-shadow:0 0 0 3px rgba(230,126,34,.1)}
+.form-field textarea{resize:vertical;min-height:60px}
+.form-actions{display:flex;align-items:center;gap:10px;padding-top:14px;border-top:1px solid var(--border);flex-wrap:wrap;margin-top:4px}
+
+/* ── BUTTONS ── */
+.btn{background:var(--surface);border:1px solid var(--border2);color:var(--text3);font-size:12px;padding:7px 14px;border-radius:var(--radius-sm);cursor:pointer;font-family:inherit;transition:.15s;display:inline-flex;align-items:center;gap:5px}
+.btn:hover{background:var(--surface2)}
+.btn-orange{background:var(--accent);color:#fff;border-color:var(--accent)}.btn-orange:hover{background:var(--accent-hover)}
+.btn-green{border-color:#bbf7d0;color:var(--green)}.btn-green:hover{background:var(--green-light)}
+.btn-red{border-color:#fecaca;color:var(--red)}.btn-red:hover{background:var(--red-light)}
+.btn-save{background:var(--accent);color:#fff;border:none;padding:9px 22px;border-radius:var(--radius-sm);font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;gap:8px}
+.btn-save:hover{background:var(--accent-hover)}
+.btn-save:disabled{background:var(--border2);cursor:not-allowed}
+.btn-clear{background:var(--surface);border:1px solid var(--border);color:var(--text3);padding:9px 16px;border-radius:var(--radius-sm);font-size:13px;cursor:pointer;font-family:inherit}
+.btn-clear:hover{background:var(--surface2)}
+.editor-only{display:none !important}
+.editor-only.vis{display:inline-flex !important}
+.editor-only.vis-block{display:block !important}
+
+/* ── METRICS ── */
+.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:18px}
+.metric{background:var(--surface);border-radius:var(--radius);padding:14px 16px;text-align:center;border:1px solid var(--border);box-shadow:var(--shadow)}
+.metric-label{font-size:11px;color:var(--text4);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;font-weight:600}
+.metric-val{font-size:28px;font-weight:700}
+.metric-sub{font-size:11px;color:var(--text4);margin-top:3px}
+
+/* ── FILTER BAR ── */
+.filter-bar{display:flex;gap:10px;margin-bottom:14px;align-items:center;flex-wrap:wrap}
+.filter-bar label{font-size:11px;color:var(--text3);font-weight:600}
+select,input[type="date"]{background:var(--surface);border:1px solid var(--border);color:var(--text2);font-size:12px;padding:7px 10px;border-radius:var(--radius-sm);font-family:inherit}
+.estado-switch{display:flex;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:2px;gap:2px}
+.estado-switch button{border:none;background:transparent;padding:5px 16px;border-radius:4px;font-size:12px;cursor:pointer;color:var(--text3);font-weight:600;transition:all .15s;font-family:inherit}
+.sw-pend{background:var(--surface)!important;color:var(--accent)!important;box-shadow:var(--shadow)}
+.sw-real{background:var(--surface)!important;color:var(--green)!important;box-shadow:var(--shadow)}
+
+/* ── SECTION BOX ── */
+.section-box{background:var(--surface);border-radius:var(--radius);border:1px solid var(--border);overflow:hidden;box-shadow:var(--shadow)}
+.section-header{background:var(--surface2);padding:11px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px}
+.section-dot{width:8px;height:8px;border-radius:2px;display:inline-block;flex-shrink:0}
+.section-title{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px}
+
+/* ── TABLE ── */
+table{width:100%;border-collapse:collapse;font-size:13px;table-layout:fixed}
+th{text-align:left;padding:9px 10px;color:var(--text4);font-weight:600;font-size:11px;text-transform:uppercase;border-bottom:1px solid var(--border);background:var(--surface2)}
+td{padding:10px;border-bottom:1px solid var(--border);vertical-align:middle;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text2)}
+tr.even td{background:#fff}tr.odd td{background:var(--surface2)}
+tr.clickable:hover td{background:var(--accent-light);cursor:pointer}
+.equipo-cell{font-weight:600;color:var(--text)}
+.desc-cell{color:var(--text3);white-space:normal;line-height:1.3}
+.pill{font-size:11px;font-weight:600;padding:3px 9px;border-radius:20px;white-space:nowrap;border:1px solid transparent}
+.pill-alta{background:var(--red-light);color:var(--red);border-color:#fecaca}
+.pill-media{background:var(--yellow-light);color:var(--yellow);border-color:#fde68a}
+.pill-baja{background:var(--green-light);color:var(--green);border-color:#bbf7d0}
+.pill-pend{background:var(--blue-light);color:var(--blue);border-color:#bfdbfe}
+.pill-proceso{background:var(--yellow-light);color:var(--yellow);border-color:#fde68a}
+.pill-real{background:var(--green-light);color:var(--green);border-color:#bbf7d0}
+.operador{display:inline-block;background:var(--blue-light);color:var(--blue);font-size:11px;font-weight:600;padding:2px 8px;border-radius:12px;border:1px solid #bfdbfe}
+.foto-link{font-size:11px;color:var(--blue);text-decoration:none}
+.foto-link:hover{color:var(--accent)}
+.no-data{color:var(--text4);font-size:13px;padding:2rem;text-align:center}
+.loading{color:var(--text4);font-size:13px;padding:1.5rem;text-align:center}
+.error-msg{color:var(--red);font-size:13px;padding:1rem}
+.detalle-row td{background:#f8f9ff!important;border-bottom:2px solid #e8eaf6}
+.detalle-box{padding:8px 4px;display:flex;gap:24px;flex-wrap:wrap}
+.detalle-item{display:flex;flex-direction:column;gap:2px}
+.detalle-lbl{font-size:10px;color:var(--text4);text-transform:uppercase;font-weight:600}
+.detalle-val{font-size:12px;color:var(--text2);white-space:normal;max-width:350px}
+
+/* ── FOTO UPLOAD ── */
+.foto-upload-area{border:2px dashed var(--border2);border-radius:var(--radius-sm);padding:10px 16px;display:inline-flex;align-items:center;gap:8px;cursor:pointer;transition:all .15s;background:var(--surface2)}
+.foto-upload-area:hover{border-color:var(--accent);background:var(--accent-light)}
+.foto-upload-area input{display:none}
+.foto-preview{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.foto-thumb{width:60px;height:60px;object-fit:cover;border-radius:4px;border:1px solid var(--border)}
+.foto-status{font-size:11px;color:var(--accent);margin-top:6px}
+
+/* ── ACTIVOS ── */
+.activos-toolbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;flex-wrap:wrap;gap:10px}
+.search-wrap{position:relative;display:inline-flex;align-items:center}
+.search-wrap::before{content:'🔍';position:absolute;left:9px;font-size:12px;pointer-events:none}
+.search-input{background:var(--surface);border:1px solid var(--border);color:var(--text2);font-size:12px;padding:7px 12px 7px 32px;border-radius:var(--radius-sm);font-family:inherit;width:240px}
+.area-group{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:10px;box-shadow:var(--shadow);overflow:hidden}
+.area-group-header{display:flex;align-items:center;gap:12px;padding:12px 16px;cursor:pointer;user-select:none;transition:background .15s}
+.area-group-header:hover{background:var(--surface2)}
+.area-group.open .area-group-header{background:var(--accent-light);border-bottom:1px solid #fed7aa}
+.area-group-chevron{font-size:12px;color:var(--text4);transition:transform .2s;flex-shrink:0}
+.area-group.open .area-group-chevron{transform:rotate(90deg)}
+.area-group-name{font-size:13px;font-weight:700;color:var(--text);flex:1}
+.area-group.open .area-group-name{color:var(--accent)}
+.area-group-count{font-size:11px;color:var(--text4);background:var(--bg);padding:2px 8px;border-radius:10px;border:1px solid var(--border)}
+.area-group-body{display:none}
+.area-group.open .area-group-body{display:block}
+.activos-table{width:100%;border-collapse:collapse;font-size:12px;table-layout:fixed}
+.activos-table th{text-align:left;padding:8px 12px;color:var(--text4);font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:.6px;border-bottom:1px solid var(--border);background:var(--surface2)}
+.activos-table td{padding:9px 12px;border-bottom:1px solid var(--border);vertical-align:middle;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text2)}
+.activos-table tr:last-child td{border-bottom:none}
+.activos-table tr.a-row:hover td{background:var(--accent-light);cursor:pointer}
+.tag-cell{font-family:'DM Mono',monospace;font-size:11px;font-weight:600;color:var(--accent);background:var(--accent-light);padding:2px 7px;border-radius:4px;border:1px solid #fed7aa;display:inline-block}
+.estado-activo{background:var(--green-light);color:var(--green);border:1px solid #bbf7d0;padding:2px 8px;border-radius:12px;font-size:10px;font-weight:600}
+.estado-inactivo{background:var(--red-light);color:var(--red);border:1px solid #fecaca;padding:2px 8px;border-radius:12px;font-size:10px;font-weight:600}
+.estado-mant{background:var(--yellow-light);color:var(--yellow);border:1px solid #fde68a;padding:2px 8px;border-radius:12px;font-size:10px;font-weight:600}
+.doc-link{font-size:11px;color:var(--blue);text-decoration:none}
+.doc-link:hover{color:var(--accent)}
+
+/* ── TAG AUTOCOMPLETE ── */
+.tag-dropdown{position:absolute;top:calc(100% + 2px);left:0;right:0;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);box-shadow:var(--shadow-md);z-index:500;max-height:220px;overflow-y:auto;display:none}
+.tag-dropdown.open{display:block}
+.tag-option{padding:8px 12px;cursor:pointer;font-size:13px;color:var(--text2);display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--border)}
+.tag-option:last-child{border-bottom:none}
+.tag-option:hover{background:var(--accent-light)}
+.tag-option-tag{font-family:'DM Mono',monospace;font-size:11px;font-weight:700;color:var(--accent);background:var(--accent-light);padding:2px 7px;border-radius:4px;border:1px solid #fed7aa;flex-shrink:0}
+.tag-option-desc{font-size:11px;color:var(--text4);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tag-no-results{padding:10px 12px;font-size:12px;color:var(--text4);text-align:center}
+
+/* ── MODAL ── */
+.modal-overlay{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.45);z-index:1000;align-items:center;justify-content:center}
+.modal-overlay.active{display:flex}
+.modal{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;width:90%;max-width:700px;max-height:90vh;overflow-y:auto;box-shadow:var(--shadow-lg)}
+.modal-title{font-size:15px;font-weight:700;color:var(--accent);margin-bottom:16px;display:flex;justify-content:space-between;align-items:center}
+.modal-close{cursor:pointer;color:var(--text4);font-size:18px;background:none;border:none}
+.modal-close:hover{color:var(--text)}
+.modal-actions{display:flex;gap:8px;align-items:center;justify-content:space-between;flex-wrap:wrap;padding-top:12px;border-top:1px solid var(--border);margin-top:8px}
+
+/* ── LOGIN MODAL ── */
+.login-modal-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:3000;display:flex;align-items:center;justify-content:center}
+.login-modal{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:32px;width:90%;max-width:360px;box-shadow:var(--shadow-lg)}
+.login-modal-title{font-size:16px;font-weight:700;color:var(--text);margin-bottom:4px}
+.login-modal-sub{font-size:12px;color:var(--text3);margin-bottom:20px}
+.login-field{margin-bottom:14px}
+.login-field label{font-size:11px;color:var(--text3);display:block;margin-bottom:4px;font-weight:600;text-transform:uppercase;letter-spacing:.5px}
+.login-field input{width:100%;border:1px solid var(--border);padding:9px 12px;border-radius:var(--radius-sm);font-size:13px;color:var(--text);background:var(--surface2);font-family:inherit}
+.login-field input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(230,126,34,.1)}
+.login-error{color:var(--red);font-size:12px;margin-bottom:10px;min-height:16px;font-weight:500}
+.btn-login-submit{width:100%;background:var(--accent);color:#fff;border:none;padding:11px;border-radius:var(--radius-sm);font-size:14px;font-weight:600;cursor:pointer;font-family:inherit}
+.btn-login-submit:hover{background:var(--accent-hover)}
+.btn-login-submit:disabled{background:var(--border2);cursor:not-allowed}
+
+@media(max-width:700px){
+  .sidebar{transform:translateX(-100%)}
+  .main{margin-left:0;padding:16px}
+  .metrics{grid-template-columns:repeat(2,1fr)}
+}
+</style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="topbar-brand">
+    <div>
+      <div class="plant">Planta Explora</div>
+      <div class="title"><span class="title-dot"></span>SOLICITUDES DE TRABAJO</div>
+    </div>
+  </div>
+  <div class="topbar-right">
+    <div class="last-update">Última actualización<br><span id="last-time">-</span></div>
+    <div id="login-bar" class="login-bar">
+      <div>
+        <div class="login-usuario" id="login-nombre">Sin sesión</div>
+        <div class="login-rol" id="login-rol-txt">—</div>
+      </div>
+      <button class="btn-logout" id="btn-cambiar-pass" onclick="abrirCambiarPass()" style="display:none;font-size:11px;padding:4px 10px">🔑 Cambiar clave</button>
+      <button class="btn-login" id="btn-abrir-login" onclick="abrirLogin()">🔐 Ingresar</button>
+    </div>
+  </div>
+</div>
+
+<!-- LAYOUT -->
+<div class="layout">
+
+  <!-- SIDEBAR -->
+  <nav class="sidebar">
+    <div class="sidebar-section">
+      <div class="sidebar-label">Menú</div>
+      <button class="nav-item active" id="nav-st" onclick="showView('st',this)">
+        <span class="nav-icon">🔧</span> Solicitudes
+      </button>
+      <button class="nav-item" id="nav-activos" onclick="showView('activos',this)">
+        <span class="nav-icon">🏭</span> Activos
+      </button>
+    </div>
+  </nav>
+
+  <!-- MAIN -->
+  <main class="main">
+
+    <!-- ══ ST ══ -->
+    <div id="view-st" class="view active">
+      <div class="form-card">
+        <div class="form-card-header" onclick="toggleForm()">
+          <span class="title-dot"></span>
+          <span class="form-card-title">Nueva solicitud de trabajo</span>
+          <span class="form-card-arrow" id="form-arrow">▲</span>
+        </div>
+        <div class="form-body" id="form-body">
+          <div class="form-grid">
+            <div class="form-field"><label>Solicitante <span style="color:var(--red)">*</span></label>
+              <input id="f-solicit" placeholder="Tu nombre" readonly style="background:var(--surface2);color:var(--text3);cursor:not-allowed">
+            </div>
+            <!-- TAG AUTOCOMPLETE -->
+            <div class="form-field" style="position:relative">
+              <label>Equipo (TAG) <span style="color:var(--red)">*</span></label>
+              <input id="f-equipo" placeholder="Escribí el TAG..." autocomplete="off"
+                oninput="onTagInput(this,'st-tag-dd')"
+                onfocus="onTagInput(this,'st-tag-dd')"
+                onblur="setTimeout(function(){closeTagDropdown('st-tag-dd')},200)">
+              <div id="st-tag-dd" class="tag-dropdown"></div>
+            </div>
+            <div class="form-field"><label>Sector</label>
+              <select id="f-sector">
+                <option value="">Seleccionar...</option>
+                <option>Producción</option>
+                <option>Logística</option>
+                <option>Administración</option>
+                <option>SHYMA</option>
+                <option>Ingeniería</option>
+                <option>Gerencia</option>
+                <option>Mantenimiento</option>
+                <option>Obras Menores</option>
+                <option>Laboratorio</option>
+                <option>Servicios</option>
+              </select>
+            </div>
+            <div class="form-field" style="grid-column:1/-1">
+              <label>Descripción <span style="color:var(--red)">*</span></label>
+              <textarea id="f-desc" placeholder="Describí el problema o tarea..." style="min-height:80px"></textarea>
+            </div>
+            <div class="form-field"><label>Especialidad</label>
+              <select id="f-espec">
+                <option value="">Seleccionar...</option>
+                <option value="Eléctrica">Eléctrica</option>
+                <option value="Mecánica">Mecánica</option>
+                <option value="Instrumentación">Instrumentación</option>
+                <option value="Civil">Civil</option>
+                <option value="Edificios">Edificios</option>
+                <option value="Laboratorio">Laboratorio</option>
+                <option value="Shyma">Shyma</option>
+                <option value="Logística">Logística</option>
+                <option value="Ingeniería">Ingeniería</option>
+                <option value="Obras Menores">Obras Menores</option>
+              </select>
+            </div>
+            <div class="form-field"><label>Prioridad</label>
+              <select id="f-prior">
+                <option value="Media">Media</option>
+                <option value="Alta">Alta</option>
+                <option value="Urgente">Urgente</option>
+                <option value="Baja">Baja</option>
+              </select>
+            </div>
+            <div class="form-field"><label>Fecha solicitud</label>
+              <input id="f-fsolic" type="date">
+            </div>
+            <div class="form-field" style="grid-column:1/-1">
+              <label>Observaciones</label>
+              <textarea id="f-obs" placeholder="Información adicional, síntomas, urgencia..." style="min-height:60px"></textarea>
+            </div>
+          </div>
+          <div style="margin-bottom:16px">
+            <div style="font-size:11px;color:var(--text3);margin-bottom:8px;font-weight:600;text-transform:uppercase;letter-spacing:.5px">Fotos (opcional)</div>
+            <div class="foto-upload-area" onclick="document.getElementById('f-fotos').click()">
+              <input type="file" id="f-fotos" multiple accept="image/*,application/pdf,.doc,.docx,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" onchange="previewFotos(this)">
+              <span style="font-size:18px">📎</span>
+              <span style="font-size:12px;color:var(--text3)">Adjuntar fotos</span>
+            </div>
+            <div class="foto-preview" id="f-foto-preview"></div>
+            <div class="foto-status" id="f-foto-status"></div>
+          </div>
+          <div class="form-actions">
+            <button class="btn-save" id="btn-guardar" onclick="guardarST()">💾 Enviar solicitud</button>
+            <button class="btn-clear" onclick="limpiarForm()">Limpiar</button>
+            <span style="font-size:12px" id="f-msg"></span>
+          </div>
+        </div>
+      </div>
+
+      <div class="metrics" id="st-metrics"></div>
+
+      <div class="filter-bar">
+        <div class="estado-switch">
+          <button id="btn-pend" class="sw-pend" onclick="setEstado('pendiente')">⏳ Pendientes</button>
+          <button id="btn-real" onclick="setEstado('realizado')">✅ Realizadas</button>
+        </div>
+        <label>Prioridad:</label>
+        <select id="filter-prior" onchange="renderTabla()">
+          <option value="">Todas</option>
+          <option value="Urgente">Urgente</option>
+          <option value="Alta">Alta</option>
+          <option value="Media">Media</option>
+          <option value="Baja">Baja</option>
+        </select>
+        <button class="btn" onclick="loadST()">↻ Actualizar</button>
+      </div>
+
+      <div class="section-box">
+        <div class="section-header">
+          <span class="section-dot" id="section-dot" style="background:var(--accent)"></span>
+          <span class="section-title" id="section-title" style="color:var(--accent)">Solicitudes pendientes</span>
+        </div>
+        <div id="st-table"><p class="loading">Cargando...</p></div>
+      </div>
+    </div>
+
+    <!-- ══ ACTIVOS ══ -->
+    <div id="view-activos" class="view">
+      <div class="activos-toolbar">
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="font-size:18px;font-weight:700;color:var(--text)">Activos</span>
+          <span id="activos-count-badge" style="font-size:11px;color:var(--text4);background:var(--surface2);border:1px solid var(--border);padding:2px 8px;border-radius:10px"></span>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+          <div class="search-wrap">
+            <input type="text" class="search-input" id="activos-search" placeholder="Buscar TAG, descripción, área..." oninput="renderActivos()">
+          </div>
+          <button class="btn btn-orange editor-only" id="btn-nuevo-activo" onclick="abrirModalActivo(null)">+ Nuevo activo</button>
+          <button class="btn" onclick="loadActivos()">↻ Actualizar</button>
+        </div>
+      </div>
+      <div id="activos-content"><p class="loading">Cargando activos...</p></div>
+    </div>
+
+  </main>
+</div>
+
+<!-- MODAL ACTIVO -->
+<div class="modal-overlay" id="modal-activo-overlay">
+  <div class="modal" style="max-width:760px">
+    <div class="modal-title">
+      <span id="modal-activo-title">Nuevo activo</span>
+      <button class="modal-close" onclick="closeModalActivo()">✕</button>
+    </div>
+    <div class="form-grid">
+      <div class="form-field"><label>TAG</label><input id="ma-tag" placeholder="Ej: BXX 760105" style="font-family:'DM Mono',monospace"></div>
+      <div class="form-field"><label>Descripción</label><input id="ma-descripcion" placeholder="Nombre del equipo"></div>
+      <div class="form-field"><label>Área</label><input id="ma-area" placeholder="Ej: Producción"></div>
+      <div class="form-field"><label>Subárea</label><input id="ma-subarea" placeholder="Ej: Línea 1"></div>
+      <div class="form-field"><label>P&ID</label><input id="ma-pid" placeholder="Ej: P&ID-003-A"></div>
+      <div class="form-field"><label>Tipo</label><input id="ma-tipo" placeholder="Ej: Bomba centrífuga"></div>
+      <div class="form-field"><label>Proveedor / Modelo</label><input id="ma-proveedor" placeholder="Ej: Grundfos CM5-4"></div>
+      <div class="form-field"><label>Dato característico</label><input id="ma-dato" placeholder="Ej: 5.5 kW, 380V"></div>
+      <div class="form-field"><label>Material</label><input id="ma-material" placeholder="Ej: Acero inox 316"></div>
+      <div class="form-field"><label>Estado</label><input id="ma-estado" placeholder="Ej: Activo"></div>
+      <div class="form-field" style="grid-column:1/-1"><label>Doc. de referencia</label><input id="ma-doc-ref" placeholder="Ej: Manual técnico, norma..."></div>
+    </div>
+    <div style="margin-bottom:16px">
+      <div style="font-size:11px;color:var(--text3);margin-bottom:6px;font-weight:600;text-transform:uppercase;letter-spacing:.5px">Archivo adjunto</div>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <input id="ma-archivo-url" placeholder="Pegar link de Drive..." style="flex:1;min-width:220px;background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:8px 10px;border-radius:var(--radius-sm);font-size:13px;font-family:inherit">
+        <label class="editor-only" style="background:var(--surface2);border:1px solid var(--border);color:var(--text3);font-size:12px;padding:7px 14px;border-radius:var(--radius-sm);cursor:pointer;display:none;align-items:center;gap:6px" id="lbl-archivo-activo">
+          📎 Subir archivo
+          <input type="file" id="ma-archivo-file" style="display:none" accept="image/*,application/pdf,.dwg,.dxf,.xlsx,.docx" onchange="onActivoArchivoChange(this)">
+        </label>
+        <span id="ma-archivo-nombre" style="font-size:11px;color:var(--green);font-weight:600"></span>
+      </div>
+      <div id="ma-archivo-existente" style="margin-top:8px"></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-red editor-only" id="btn-eliminar-activo" onclick="eliminarActivo()">🗑 Eliminar</button>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <span id="ma-modal-msg" style="font-size:12px"></span>
+        <button class="btn" onclick="closeModalActivo()">Cancelar</button>
+        <button class="btn btn-green editor-only" onclick="guardarActivo()">💾 Guardar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL CAMBIAR CONTRASEÑA -->
+<div class="login-modal-overlay" id="modal-pass-overlay" style="display:none">
+  <div class="login-modal">
+    <div class="login-modal-title">🔑 Cambiar contraseña</div>
+    <div class="login-modal-sub">Ingresá tu contraseña actual y la nueva</div>
+    <div class="login-field"><label>Contraseña actual</label>
+      <input type="password" id="pass-actual" placeholder="••••••••">
+    </div>
+    <div class="login-field"><label>Nueva contraseña</label>
+      <input type="password" id="pass-nueva" placeholder="••••••••">
+    </div>
+    <div class="login-field"><label>Confirmar nueva contraseña</label>
+      <input type="password" id="pass-confirmar" placeholder="••••••••" onkeydown="if(event.key==='Enter')guardarNuevaPass()">
+    </div>
+    <div class="login-error" id="pass-msg"></div>
+    <button class="btn-login-submit" onclick="guardarNuevaPass()">Guardar</button>
+    <div style="text-align:center;margin-top:10px">
+      <button style="background:none;border:none;color:var(--text3);font-size:12px;cursor:pointer" onclick="cerrarCambiarPass()">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<!-- LOGIN MODAL -->
+<div class="login-modal-overlay" id="login-modal-overlay">
+  <div class="login-modal">
+    <div class="login-modal-title">🔐 Acceso</div>
+    <div class="login-modal-sub">Ingresá tus credenciales para continuar</div>
+    <div class="login-field"><label>Usuario</label>
+      <input type="text" id="login-input-usuario" placeholder="tu.usuario" autocomplete="username">
+    </div>
+    <div class="login-field"><label>Contraseña</label>
+      <input type="password" id="login-input-pass" placeholder="••••••••" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()">
+    </div>
+    <div class="login-error" id="login-error"></div>
+    <button class="btn-login-submit" id="btn-login-submit" onclick="doLogin()">Ingresar</button>
+  </div>
+</div>
+
+<script>
+var VENC_URL = "https://script.google.com/macros/s/AKfycbxBBiJZexMdWlGFDWKnIaPiOmSACB9RL1G-w03amZYBBwIw4AUWl59WzIdZoyqNrtiXvg/exec";
+
+var stTasks=[], activosTasks=[], estadoFiltro="pendiente", formFiles=[], expandedId=null, sortField="fecha_solicitud", sortDir=-1;
+var editingActivoId=null, activoArchivoFile=null;
+var today=new Date();
+var SESSION_KEY='st_session', currentUser=null, currentRol=null, currentRoles=[];
+
+function pad(n){return String(n).padStart(2,"0");}
+function toDateStr(d){return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());}
+
+/* ═══ ROLES ═══ */
+function hasRole(rol){return currentRoles.indexOf(rol.toLowerCase())!==-1;}
+function isEditor(){return hasRole('editor')||hasRole('supervisor');}
+function isSolicitante(){return hasRole('solicitante');}
+function isGestor(){return hasRole('gestor_st');}
+/* Puede editar/eliminar una ST: el dueño, o un gestor_st (cualquier ST), o un editor */
+function puedeGestionarST(r){
+  if(isEditor()||isGestor())return true;
+  return currentUser&&String(r.solicitante||'').toLowerCase()===String(currentUser).toLowerCase();
+}
+
+/* ═══ SESSION ═══ */
+function initSession(){
+  // 1. Leer sesión desde URL params (viene del portal)
+  try{
+    var params=new URLSearchParams(window.location.search);
+    var uParam=params.get('usuario');var rParam=params.get('rol');
+    if(uParam&&rParam){
+      currentUser=uParam;currentRol=rParam;
+      sessionStorage.setItem(SESSION_KEY,JSON.stringify({usuario:uParam,rol:rParam}));
+      parseRoles();aplicarSesion();
+      document.getElementById('login-modal-overlay').style.display='none';
+      loadST();loadActivos();return true;
+    }
+  }catch(e){}
+  // 2. Leer desde sessionStorage
+  try{
+    var saved=sessionStorage.getItem(SESSION_KEY);
+    if(saved){var s=JSON.parse(saved);currentUser=s.usuario;currentRol=s.rol;parseRoles();aplicarSesion();return true;}
+  }catch(e){}
+  return false;
+}
+
+function parseRoles(){
+  currentRoles=(currentRol||'').toLowerCase().split(',').map(function(r){return r.trim();}).filter(Boolean);
+}
+
+function aplicarSesion(){
+  var ed=isEditor();
+  var bar=document.getElementById('login-bar');
+  document.getElementById('login-nombre').textContent=currentUser||'Sin sesión';
+  document.getElementById('login-rol-txt').textContent=currentRol||'—';
+  var btn=document.getElementById('btn-abrir-login');
+  if(currentUser){
+    bar.className=ed?'login-bar editor':'login-bar';
+    btn.textContent='Cerrar sesión';
+    btn.onclick=cerrarSesion;
+    btn.className='btn-logout';
+    // Mostrar botón cambiar contraseña
+    var btnPass=document.getElementById('btn-cambiar-pass');
+    if(btnPass)btnPass.style.display='inline-flex';
+  } else {
+    bar.className='login-bar';
+    btn.textContent='🔐 Ingresar';
+    btn.onclick=abrirLogin;
+    btn.className='btn-login';
+    var btnPass=document.getElementById('btn-cambiar-pass');
+    if(btnPass)btnPass.style.display='none';
+  }
+  // editor-only: botones de edición
+  document.querySelectorAll('.editor-only').forEach(function(el){
+    if(ed){el.classList.add('vis');el.style.removeProperty('display');}
+    else{el.classList.remove('vis');el.style.setProperty('display','none','important');}
+  });
+  // Autocompletar solicitante siempre que haya usuario logueado
+  var fSolicit=document.getElementById('f-solicit');
+  if(fSolicit&&currentUser&&!fSolicit.value)fSolicit.value=currentUser;
+  // label subir archivo activo
+  var lblArch=document.getElementById('lbl-archivo-activo');
+  if(lblArch){lblArch.style.display=ed?'inline-flex':'none';}
+  // deshabilitar campos modal activo si no es editor
+  ['ma-tag','ma-descripcion','ma-area','ma-subarea','ma-pid','ma-tipo','ma-proveedor','ma-dato','ma-material','ma-doc-ref','ma-estado','ma-archivo-url'].forEach(function(id){
+    var el=document.getElementById(id);if(el)el.disabled=!ed;
+  });
+  var maFile=document.getElementById('ma-archivo-file');if(maFile)maFile.disabled=!ed;
+}
+
+function abrirLogin(){
+  document.getElementById('login-modal-overlay').style.display='flex';
+  document.getElementById('login-error').textContent='';
+  document.getElementById('login-input-usuario').value='';
+  document.getElementById('login-input-pass').value='';
+  setTimeout(function(){document.getElementById('login-input-usuario').focus();},100);
+}
+
+function cerrarLogin(){
+  document.getElementById('login-modal-overlay').style.display='none';
+}
+
+function doLogin(){
+  var usuario=document.getElementById('login-input-usuario').value.trim();
+  var pass=document.getElementById('login-input-pass').value;
+  var err=document.getElementById('login-error'),btn=document.getElementById('btn-login-submit');
+  if(!usuario||!pass){err.textContent='Completá usuario y contraseña';return;}
+  err.textContent='';btn.disabled=true;btn.textContent='Verificando...';
+  fetch(VENC_URL,{method:'POST',body:JSON.stringify({action:'login',usuario:usuario,contrasena:pass})})
+    .then(function(r){return r.json();})
+    .then(function(data){
+      btn.disabled=false;btn.textContent='Ingresar';
+      if(data.ok){
+        currentUser=data.usuario;currentRol=data.rol;
+        parseRoles();
+        sessionStorage.setItem(SESSION_KEY,JSON.stringify({usuario:data.usuario,rol:data.rol}));
+        cerrarLogin();
+        aplicarSesion();
+        // Autocompletar solicitante para TODOS los usuarios
+        document.getElementById('f-solicit').value=currentUser;
+        // Cargar datos al ingresar
+        loadST();
+        loadActivos();
+      } else {err.textContent=data.error||'Credenciales incorrectas';}
+    })
+    .catch(function(){btn.disabled=false;btn.textContent='Ingresar';err.textContent='Error de conexión';});
+}
+
+function cerrarSesion(){
+  currentUser=null;currentRol=null;currentRoles=[];
+  sessionStorage.removeItem(SESSION_KEY);
+  aplicarSesion();
+  // Volver a pedir login
+  abrirLogin();
+}
+
+/* ═══ NAVEGACIÓN ═══ */
+function showView(vista, el){
+  document.querySelectorAll('.nav-item').forEach(function(n){n.classList.remove('active');});
+  el.classList.add('active');
+  document.querySelectorAll('.view').forEach(function(v){v.classList.remove('active');});
+  document.getElementById('view-'+vista).classList.add('active');
+  if(vista==='activos'&&!activosTasks.length) loadActivos();
+}
+
+/* ═══ TAG AUTOCOMPLETE ═══ */
+function onTagInput(input, ddId){
+  var dd=document.getElementById(ddId);
+  var q=input.value.toLowerCase().trim();
+  var matches=activosTasks.filter(function(r){
+    return !q||String(r.tag||'').toLowerCase().includes(q);
+  }).slice(0,40);
+  if(!matches.length){
+    dd.innerHTML="<div class='tag-no-results'>Sin resultados</div>";
+    dd.classList.add('open');return;
+  }
+  dd.innerHTML=matches.map(function(r){
+    var tag=String(r.tag||'');
+    var desc=String(r.descripcion||'');
+    return "<div class='tag-option' onmousedown='selectTag(\""+ddId+"\",\""+tag.replace(/"/g,'&quot;')+"\")'>" +
+      "<span class='tag-option-tag'>"+tag+"</span>" +
+      "<span class='tag-option-desc'>"+desc+"</span></div>";
+  }).join('');
+  dd.classList.add('open');
+}
+function selectTag(ddId,tag){
+  var dd=document.getElementById(ddId);
+  var input=dd.previousElementSibling;
+  if(input)input.value=tag;
+  closeTagDropdown(ddId);
+}
+function closeTagDropdown(ddId){
+  var dd=document.getElementById(ddId);
+  if(dd)dd.classList.remove('open');
+}
+
+/* ═══ FORM ST ═══ */
+function toggleForm(){
+  var b=document.getElementById('form-body'),a=document.getElementById('form-arrow');
+  var open=b.style.display==='none';
+  b.style.display=open?'block':'none';
+  a.textContent=open?'▲':'▼';
+}
+
+function limpiarForm(){
+  ['f-solicit','f-equipo','f-desc','f-espec','f-obs'].forEach(function(id){document.getElementById(id).value='';});
+  document.getElementById('f-sector').value='';
+  document.getElementById('f-prior').value='Media';
+  document.getElementById('f-fsolic').value=toDateStr(today);
+  document.getElementById('f-foto-preview').innerHTML='';
+  document.getElementById('f-foto-status').textContent='';
+  document.getElementById('f-fotos').value='';
+  document.getElementById('f-msg').textContent='';
+  formFiles=[];
+  // Restaurar solicitante para todos los usuarios
+  if(currentUser) document.getElementById('f-solicit').value=currentUser;
+}
+
+function previewFotos(input){
+  formFiles=Array.from(input.files);
+  var prev=document.getElementById('f-foto-preview');prev.innerHTML='';
+  formFiles.forEach(function(f){var img=document.createElement('img');img.className='foto-thumb';img.src=URL.createObjectURL(f);prev.appendChild(img);});
+}
+
+function fileToBase64(file){
+  return new Promise(function(resolve,reject){
+    // PDF y Word: leer directamente sin canvas
+    var tiposDirectos=['application/pdf','application/msword','application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+    var esDirecto=tiposDirectos.indexOf(file.type)!==-1||file.name.match(/\.(pdf|doc|docx)$/i);
+    if(esDirecto){
+      var reader=new FileReader();
+      reader.onload=function(e){resolve(e.target.result.split(',')[1]);};
+      reader.onerror=function(){reject(new Error('Error leyendo archivo'));};
+      reader.readAsDataURL(file);
+      return;
+    }
+    // Imágenes: redimensionar con canvas
+    var img=new Image();
+    var url=URL.createObjectURL(file);
+    img.onload=function(){
+      var MAX=1200,w=img.width,h=img.height;
+      if(w>MAX||h>MAX){if(w>h){h=Math.round(h*MAX/w);w=MAX;}else{w=Math.round(w*MAX/h);h=MAX;}}
+      var canvas=document.createElement('canvas');canvas.width=w;canvas.height=h;
+      canvas.getContext('2d').drawImage(img,0,0,w,h);
+      URL.revokeObjectURL(url);resolve(canvas.toDataURL('image/jpeg',0.75).split(',')[1]);
+    };
+    img.onerror=function(){URL.revokeObjectURL(url);reject(new Error('Error imagen'));};
+    img.src=url;
+  });
+}
+
+function guardarST(){
+  var solicit=document.getElementById('f-solicit').value.trim();
+  var equipo=document.getElementById('f-equipo').value.trim();
+  var desc=document.getElementById('f-desc').value.trim();
+  var msg=document.getElementById('f-msg');
+  if(!solicit||!equipo||!desc){msg.style.color='var(--red)';msg.textContent='Completá solicitante, equipo y descripción';return;}
+  var btn=document.getElementById('btn-guardar');
+  btn.disabled=true;btn.textContent='Enviando...';
+  msg.style.color='var(--text3)';msg.textContent='Guardando...';
+  if(formFiles.length)document.getElementById('f-foto-status').textContent='Procesando '+formFiles.length+' foto(s)...';
+  var fp=formFiles.length
+    ?Promise.all(formFiles.map(function(f){return fileToBase64(f).then(function(b64){return{nombre:f.name,tipo:f.type||'image/jpeg',datos:b64};});}))
+    :Promise.resolve([]);
+  fp.then(function(fotos){
+    return fetch(VENC_URL,{method:'POST',body:JSON.stringify({
+      action:'addST',solicitante:solicit,equipo:equipo,
+      sector:document.getElementById('f-sector').value,
+      descripcion:desc,
+      especialidad:document.getElementById('f-espec').value.trim(),
+      prioridad:document.getElementById('f-prior').value,
+      fecha_solicitud:document.getElementById('f-fsolic').value,
+      observaciones:document.getElementById('f-obs').value.trim(),fotos:fotos
+    })});
+  })
+  .then(function(r){return r.json();})
+  .then(function(data){
+    btn.disabled=false;btn.textContent='💾 Enviar solicitud';
+    document.getElementById('f-foto-status').textContent='';
+    if(data.ok){msg.style.color='var(--green)';msg.textContent='✅ Solicitud enviada correctamente';limpiarForm();loadST();}
+    else{msg.style.color='var(--red)';msg.textContent='Error: '+(data.error||'desconocido');}
+  })
+  .catch(function(){
+    btn.disabled=false;btn.textContent='💾 Enviar solicitud';
+    document.getElementById('f-foto-status').textContent='';
+    msg.style.color='var(--red)';msg.textContent='Error de conexión';
+  });
+}
+
+/* ═══ LISTA ST ═══ */
+function loadST(){
+  document.getElementById('st-table').innerHTML="<p class='loading'>Cargando...</p>";
+  fetch(VENC_URL+'?action=getAllST')
+    .then(function(r){return r.json();})
+    .then(function(data){
+      stTasks=data;
+      document.getElementById('last-time').textContent=new Date().toLocaleTimeString('es-AR');
+      renderMetricas();renderTabla();
+    })
+    .catch(function(e){document.getElementById('st-table').innerHTML="<p class='error-msg'>Error: "+e.message+"</p>";});
+}
+
+function setEstado(est){
+  estadoFiltro=est;
+  document.getElementById('btn-pend').className=est==='pendiente'?'sw-pend':'';
+  document.getElementById('btn-real').className=est==='realizado'?'sw-real':'';
+  renderTabla();
+}
+
+function getFiltered(){
+  var rows=stTasks.filter(function(r){
+    var real=String(r.realizado)==='1';
+    if(estadoFiltro==='pendiente'&&real)return false;
+    if(estadoFiltro==='realizado'&&!real)return false;
+    var prior=document.getElementById('filter-prior').value;
+    if(prior&&r.prioridad!==prior)return false;
+    return true;
+  });
+  rows.sort(function(a,b){
+    function parseFecha(s){if(!s)return 0;var p=String(s).split('/');if(p.length===3)return new Date(parseInt(p[2]),parseInt(p[1])-1,parseInt(p[0])).getTime();return 0;}
+    var va=a[sortField]||'';var vb=b[sortField]||'';
+    if(sortField==='fecha_solicitud'||sortField==='fecha_ejecucion'){return sortDir*(parseFecha(va)-parseFecha(vb));}
+    return sortDir*(va<vb?-1:va>vb?1:0);
+  });
+  return rows;
+}
+
+function renderMetricas(){
+  var pend=stTasks.filter(function(r){return String(r.realizado)!=='1';}).length;
+  var real=stTasks.filter(function(r){return String(r.realizado)==='1';}).length;
+  var alta=stTasks.filter(function(r){return String(r.realizado)!=='1'&&r.prioridad==='Alta';}).length;
+  document.getElementById('st-metrics').innerHTML=
+    "<div class='metric' style='border-top:3px solid var(--accent)'><div class='metric-label'>Pendientes</div><div class='metric-val' style='color:var(--accent)'>"+pend+"</div></div>"+
+    "<div class='metric' style='border-top:3px solid var(--red)'><div class='metric-label'>Alta prioridad</div><div class='metric-val' style='color:var(--red)'>"+alta+"</div></div>"+
+    "<div class='metric' style='border-top:3px solid var(--green)'><div class='metric-label'>Realizadas</div><div class='metric-val' style='color:var(--green)'>"+real+"</div></div>"+
+    "<div class='metric' style='border-top:3px solid #5c6bc0'><div class='metric-label'>Total historial</div><div class='metric-val' style='color:#5c6bc0'>"+stTasks.length+"</div></div>";
+}
+
+function pillPrior(p){
+  var map={Urgente:'pill-alta',Alta:'pill-alta',Media:'pill-media',Baja:'pill-baja'};
+  return "<span class='pill "+(map[p]||'')+"'>"+(p||'-')+"</span>";
+}
+
+function estadoPill(r){
+  var v=String(r.realizado);
+  if(v==='1') return "<span class='pill pill-real'>✅ Listo</span>";
+  if(v==='2') return "<span class='pill pill-proceso'>🔄 En proceso</span>";
+  return "<span class='pill pill-pend'>⏳ Pendiente</span>";
+}
+
+function setSortField(field){
+  if(sortField===field){sortDir*=-1;}else{sortField=field;sortDir=-1;}
+  var icons={'fecha_solicitud':'sort-fsolic','fecha_ejecucion':'sort-fejec'};
+  Object.keys(icons).forEach(function(k){var el=document.getElementById(icons[k]);if(el)el.textContent='↕';});
+  var active=document.getElementById(icons[field]);
+  if(active)active.textContent=sortDir===-1?'↓':'↑';
+  renderTabla();
+}
+function renderTabla(){
+  var rows=getFiltered();
+  var isPend=estadoFiltro==='pendiente';
+  document.getElementById('section-dot').style.background=isPend?'var(--accent)':'var(--green)';
+  document.getElementById('section-title').style.color=isPend?'var(--accent)':'var(--green)';
+  document.getElementById('section-title').textContent=(isPend?'Solicitudes pendientes — ':'Solicitudes realizadas — ')+rows.length;
+  if(!rows.length){document.getElementById('st-table').innerHTML="<p class='no-data'>"+(isPend?'No hay solicitudes pendientes.':'No hay solicitudes realizadas.')+"</p>";return;}
+  var h='<table><thead><tr>';
+  h+="<th style='width:5%'>#</th><th style='width:11%'>Equipo</th><th style='width:22%'>Descripción</th>";
+  h+="<th style='width:9%'>Especialidad</th><th style='width:7%'>Prioridad</th><th style='width:9%'>Solicitante</th>";
+  h+="<th style='width:8%;cursor:pointer;user-select:none' onclick=\"setSortField('fecha_solicitud')\"  title='Ordenar por fecha'>F.Solicitud <span id='sort-fsolic'>↕</span></th>";
+  if(!isPend){h+="<th style='width:8%;cursor:pointer;user-select:none' onclick=\"setSortField('fecha_ejecucion')\" title='Ordenar por fecha'>F.Ejecución <span id='sort-fejec'>↕</span></th><th style='width:8%'>Responsable</th>";}
+  h+="<th style='width:5%'>Fotos</th><th style='width:7%'>Estado</th><th style='width:8%'>Acción</th></tr></thead><tbody>";
+  rows.forEach(function(r,i){
+    var fotoCell=r.fotos?"<a class='foto-link' href='"+r.fotos+"' target='_blank'>📎 Ver</a>":'-';
+    var isExp=expandedId===String(r.id);
+    var rj=JSON.stringify(r).replace(/"/g,'&quot;');
+    var esSolicitante=puedeGestionarST(r);
+    h+="<tr class='"+(i%2===0?'even':'odd')+" clickable' onclick='toggleDetalle(\""+r.id+"\")' data-r=\""+rj+"\">";
+    h+="<td style='color:var(--text4);font-size:11px'>"+r.id+"</td>";
+    h+="<td class='equipo-cell'>"+r.equipo+"</td>";
+    h+="<td class='desc-cell'>"+r.descripcion+"</td>";
+    h+="<td style='font-size:12px;color:var(--text3)'>"+(r.especialidad||'-')+"</td>";
+    h+="<td>"+pillPrior(r.prioridad)+"</td>";
+    h+="<td><span class='operador'>"+(r.solicitante||'-')+"</span></td>";
+    h+="<td style='color:var(--text4);font-size:12px'>"+(r.fecha_solicitud||'-')+"</td>";
+    if(!isPend){
+      h+="<td style='color:var(--text4);font-size:12px'>"+(r.fecha_ejecucion||'-')+"</td>";
+      h+="<td><span class='operador'>"+(r.responsable||'-')+"</span></td>";
+    }
+    h+="<td onclick='event.stopPropagation()'>"+fotoCell+"</td>";
+    h+="<td>"+estadoPill(r)+"</td>";
+    h+="<td onclick='event.stopPropagation()' style='white-space:nowrap'>";
+    if(esSolicitante){
+      h+="<button class='btn' style='padding:3px 7px;font-size:11px' onclick='editarSTSolic(JSON.parse(this.closest(\"tr\").dataset.r))'>✏️</button> ";
+      h+="<button class='btn btn-red' style='padding:3px 7px;font-size:11px' onclick='eliminarSTSolic(\""+r.id+"\")'>🗑</button>";
+    } else { h+='-'; }
+    h+="</td></tr>";
+    var cols=isPend?9:11;
+    h+="<tr id='det-"+r.id+"' style='display:"+(isExp?'table-row':'none')+"'>";
+    h+="<td colspan='"+cols+"' class='detalle-row'><div class='detalle-box'>";
+    if(r.ejecutante)    h+="<div class='detalle-item'><span class='detalle-lbl'>Ejecutante</span><span class='detalle-val'>"+r.ejecutante+"</span></div>";
+    if(r.observaciones) h+="<div class='detalle-item'><span class='detalle-lbl'>Observaciones</span><span class='detalle-val'>"+r.observaciones+"</span></div>";
+    if(r.motivo_cierre) h+="<div class='detalle-item'><span class='detalle-lbl'>Motivo cierre</span><span class='detalle-val'>"+r.motivo_cierre+"</span></div>";
+    if(r.fotos)         h+="<div class='detalle-item'><span class='detalle-lbl'>Fotos Drive</span><a class='foto-link' href='"+r.fotos+"' target='_blank'>📎 Ver en Drive</a></div>";
+    if(!r.ejecutante&&!r.observaciones&&!r.fotos) h+="<span style='color:var(--text4);font-size:12px'>Sin detalles adicionales</span>";
+    h+="</div></td></tr>";
+  });
+  document.getElementById('st-table').innerHTML=h+'</tbody></table>';
+}
+
+function toggleDetalle(id){
+  var fila=document.getElementById('det-'+id);if(!fila)return;
+  var visible=fila.style.display!=='none';
+  expandedId=visible?null:String(id);
+  fila.style.display=visible?'none':'table-row';
+}
+
+/* ═══ ACTIVOS ═══ */
+function loadActivos(){
+  document.getElementById('activos-content').innerHTML="<p class='loading'>Cargando activos...</p>";
+  fetch(VENC_URL+'?action=getActivos')
+    .then(function(r){return r.json();})
+    .then(function(data){
+      activosTasks=data||[];
+      document.getElementById('last-time').textContent=new Date().toLocaleTimeString('es-AR');
+      renderActivos();
+    })
+    .catch(function(e){document.getElementById('activos-content').innerHTML="<p class='error-msg'>Error: "+e.message+"</p>";});
+}
+
+function renderActivos(){
+  var q=(document.getElementById('activos-search').value||'').toLowerCase().trim();
+  var rows=activosTasks.filter(function(r){
+    if(!q)return true;
+    return String(r.tag||'').toLowerCase().includes(q)||
+           String(r.descripcion||'').toLowerCase().includes(q)||
+           String(r.area||'').toLowerCase().includes(q)||
+           String(r.proveedor_modelo||r['proveedor___modelo']||'').toLowerCase().includes(q)||
+           String(r.subarea||'').toLowerCase().includes(q);
+  });
+  document.getElementById('activos-count-badge').textContent=rows.length+' equipos';
+  if(!rows.length){document.getElementById('activos-content').innerHTML="<p class='no-data'>Sin activos registrados.</p>";return;}
+  var areas={};
+  rows.forEach(function(r){var a=String(r.area||'Sin área').trim();if(!areas[a])areas[a]=[];areas[a].push(r);});
+  var areaKeys=Object.keys(areas).sort();
+  var html='';
+  areaKeys.forEach(function(area,idx){
+    var equipos=areas[area],isOpen=idx===0||!!q;
+    html+='<div class="area-group'+(isOpen?' open':'')+'" id="ag-'+idx+'">';
+    html+='<div class="area-group-header" onclick="toggleAreaGroup(\'ag-'+idx+'\')">';
+    html+='<span class="area-group-chevron">▶</span>';
+    html+='<span class="area-group-name">'+area+'</span>';
+    html+='<span class="area-group-count">'+equipos.length+' equipo'+(equipos.length!==1?'s':'')+'</span>';
+    html+='</div><div class="area-group-body">';
+    html+='<table class="activos-table"><thead><tr>';
+    html+='<th style="width:10%">TAG</th><th style="width:22%">Descripción</th>';
+    html+='<th style="width:13%">P&ID</th><th style="width:18%">Proveedor / Modelo</th>';
+    html+='<th style="width:16%">Doc. Referencia</th><th style="width:9%">Estado</th>';
+    html+='<th style="width:6%">Archivo</th><th style="width:6%"></th>';
+    html+='</tr></thead><tbody>';
+    equipos.forEach(function(r,i){
+      var rj=JSON.stringify(r).replace(/"/g,'&quot;');
+      var prov=r.proveedor_modelo||r['proveedor___modelo']||r['proveedor_/_modelo']||'-';
+      var doc=r.doc_de_referencia||r['doc__de_referencia']||r['doc._de_referencia']||r.doc_referencia||'-';
+      var archivoVal=r.archivo||r.archivo_url||'';
+      var estadoClass=getEstadoClass(r.estado);
+      html+='<tr class="a-row '+(i%2===0?'even':'odd')+'" onclick="abrirModalActivo(JSON.parse(this.dataset.r))" data-r="'+rj+'">';
+      html+='<td><span class="tag-cell">'+(r.tag||'-')+'</span></td>';
+      html+='<td style="white-space:normal;line-height:1.3;font-weight:500;color:var(--text)">'+(r.descripcion||'-')+'</td>';
+      html+='<td style="font-size:11px;color:var(--text3)">'+(r.p_id||r['p&id']||r.pid||'-')+'</td>';
+      html+='<td style="font-size:11px;color:var(--text3)">'+prov+'</td>';
+      html+='<td style="font-size:11px;color:var(--blue)">'+doc+'</td>';
+      html+='<td>'+(r.estado?'<span class="'+estadoClass+'">'+r.estado+'</span>':'-')+'</td>';
+      html+='<td onclick="event.stopPropagation()">'+(archivoVal?'<a href="'+archivoVal+'" target="_blank" class="doc-link">📎</a>':'-')+'</td>';
+      html+='<td onclick="event.stopPropagation()" class="editor-only" style="display:none"><button class="btn" style="padding:3px 8px;font-size:11px" onclick="abrirModalActivo(JSON.parse(this.closest(\'tr\').dataset.r))">✏️</button></td>';
+      html+='</tr>';
+    });
+    html+='</tbody></table></div></div>';
+  });
+  document.getElementById('activos-content').innerHTML=html;
+  // Aplicar visibilidad editor-only en celdas generadas dinámicamente
+  if(isEditor()){
+    document.querySelectorAll('#activos-content .editor-only').forEach(function(el){
+      el.style.removeProperty('display');
+    });
+  }
+}
+
+function getEstadoClass(estado){
+  if(!estado)return'';
+  var s=String(estado).toLowerCase();
+  if(s.includes('activ'))return'estado-activo';
+  if(s.includes('inactiv')||s.includes('baja'))return'estado-inactivo';
+  if(s.includes('mant')||s.includes('proceso')||s.includes('reparac'))return'estado-mant';
+  return'estado-activo';
+}
+
+function toggleAreaGroup(id){var el=document.getElementById(id);if(el)el.classList.toggle('open');}
+
+function abrirModalActivo(r){
+  editingActivoId=r?r.id:null;
+  activoArchivoFile=null;
+  var ed=isEditor();
+  document.getElementById('modal-activo-title').textContent=r?'Editar activo':'Nuevo activo';
+  document.getElementById('ma-tag').value=r?String(r.tag||''):'';
+  document.getElementById('ma-descripcion').value=r?String(r.descripcion||''):'';
+  document.getElementById('ma-area').value=r?String(r.area||''):'';
+  document.getElementById('ma-subarea').value=r?String(r.subarea||''):'';
+  document.getElementById('ma-pid').value=r?String(r.p_id||r['p&id']||r.pid||''):'';
+  document.getElementById('ma-tipo').value=r?String(r.tipo||''):'';
+  document.getElementById('ma-proveedor').value=r?String(r.proveedor_modelo||r['proveedor___modelo']||r['proveedor_/_modelo']||''):'';
+  document.getElementById('ma-dato').value=r?String(r.dato_caracteristico||''):'';
+  document.getElementById('ma-material').value=r?String(r.material||''):'';
+  document.getElementById('ma-doc-ref').value=r?String(r.doc_de_referencia||r['doc__de_referencia']||r.doc_referencia||''):'';
+  document.getElementById('ma-estado').value=r?String(r.estado||''):'';
+  var archivoVal=r?(r.archivo||r.archivo_url||''):'';
+  document.getElementById('ma-archivo-url').value=archivoVal;
+  document.getElementById('ma-archivo-nombre').textContent='';
+  document.getElementById('ma-modal-msg').textContent='';
+  document.getElementById('ma-archivo-existente').innerHTML=archivoVal
+    ?'<a href="'+archivoVal+'" target="_blank" style="font-size:11px;color:var(--blue)">📎 Ver archivo existente</a>':'';
+  // Botón eliminar: solo si es edición + editor
+  var btnElim=document.getElementById('btn-eliminar-activo');
+  btnElim.style.display=(r&&ed)?'inline-flex':'none';
+  // Campos: solo editables para editores
+  ['ma-tag','ma-descripcion','ma-area','ma-subarea','ma-pid','ma-tipo','ma-proveedor','ma-dato','ma-material','ma-doc-ref','ma-estado','ma-archivo-url'].forEach(function(id){
+    document.getElementById(id).disabled=!ed;
+  });
+  document.getElementById('ma-archivo-file').disabled=!ed;
+  document.getElementById('lbl-archivo-activo').style.display=ed?'inline-flex':'none';
+  // Botones guardar
+  var btnGuardar=document.querySelector('#modal-activo-overlay .btn-green');
+  if(btnGuardar)btnGuardar.style.display=ed?'inline-flex':'none';
+  document.getElementById('modal-activo-overlay').classList.add('active');
+}
+
+function onActivoArchivoChange(input){
+  activoArchivoFile=input.files[0]||null;
+  document.getElementById('ma-archivo-nombre').textContent=activoArchivoFile?'📎 '+activoArchivoFile.name:'';
+}
+
+function closeModalActivo(){
+  document.getElementById('modal-activo-overlay').classList.remove('active');
+  editingActivoId=null;activoArchivoFile=null;
+}
+document.getElementById('modal-activo-overlay').addEventListener('click',function(e){if(e.target===document.getElementById('modal-activo-overlay'))closeModalActivo();});
+
+function archivoToBase64(file){
+  return new Promise(function(resolve,reject){
+    var r=new FileReader();r.onload=function(e){resolve(e.target.result.split(',')[1]);};r.onerror=reject;r.readAsDataURL(file);
+  });
+}
+
+function guardarActivo(){
+  var msg=document.getElementById('ma-modal-msg');
+  var tag=document.getElementById('ma-tag').value.trim();
+  var desc=document.getElementById('ma-descripcion').value.trim();
+  if(!tag&&!desc){msg.style.color='var(--red)';msg.textContent='TAG o Descripción son obligatorios';return;}
+  msg.style.color='var(--text3)';msg.textContent='Guardando...';
+  var archivoUrlInput=document.getElementById('ma-archivo-url').value.trim();
+  var ap=activoArchivoFile
+    ?archivoToBase64(activoArchivoFile).then(function(b64){return{nombre:activoArchivoFile.name,tipo:activoArchivoFile.type,datos:b64};})
+    :Promise.resolve(null);
+  ap.then(function(archivo){
+    var payload={
+      action:editingActivoId?'updateActivo':'addActivo',id:editingActivoId,
+      tag:tag,descripcion:desc,
+      area:document.getElementById('ma-area').value.trim(),
+      subarea:document.getElementById('ma-subarea').value.trim(),
+      p_id:document.getElementById('ma-pid').value.trim(),
+      tipo:document.getElementById('ma-tipo').value.trim(),
+      proveedor_modelo:document.getElementById('ma-proveedor').value.trim(),
+      dato_caracteristico:document.getElementById('ma-dato').value.trim(),
+      material:document.getElementById('ma-material').value.trim(),
+      doc_de_referencia:document.getElementById('ma-doc-ref').value.trim(),
+      estado:document.getElementById('ma-estado').value.trim()
+    };
+    if(archivo)payload.archivo=archivo;else payload.archivo_url=archivoUrlInput;
+    return fetch(VENC_URL,{method:'POST',body:JSON.stringify(payload)});
+  })
+  .then(function(r){return r.json();})
+  .then(function(data){
+    if(data.ok){msg.style.color='var(--green)';msg.textContent='Guardado ✓';setTimeout(function(){closeModalActivo();loadActivos();},700);}
+    else{msg.style.color='var(--red)';msg.textContent='Error: '+(data.error||'desconocido');}
+  })
+  .catch(function(){msg.style.color='var(--red)';msg.textContent='Error de conexión';});
+}
+
+function eliminarActivo(){
+  if(!confirm('¿Eliminar este activo? Esta acción no se puede deshacer.'))return;
+  var msg=document.getElementById('ma-modal-msg');
+  msg.style.color='var(--text3)';msg.textContent='Eliminando...';
+  fetch(VENC_URL,{method:'POST',body:JSON.stringify({action:'deleteActivo',id:editingActivoId})})
+    .then(function(r){return r.json();})
+    .then(function(data){
+      if(data.ok){closeModalActivo();loadActivos();}
+      else{msg.style.color='var(--red)';msg.textContent='Error: '+(data.error||'desconocido');}
+    })
+    .catch(function(){msg.style.color='var(--red)';msg.textContent='Error de conexión';});
+}
+
+/* ═══ EDITAR / ELIMINAR ST (solicitante) ═══ */
+var editingSTId=null;
+function editarSTSolic(r){
+  if(!puedeGestionarST(r)){
+    alert('Solo el solicitante puede editar esta tarea.');return;
+  }
+  editingSTId=r.id;
+  // Abrir formulario
+  var fb=document.getElementById('form-body');
+  if(fb.style.display==='none')toggleForm();
+  document.getElementById('f-solicit').value=r.solicitante||'';
+  document.getElementById('f-equipo').value=r.equipo||'';
+  document.getElementById('f-sector').value=r.sector||'';
+  document.getElementById('f-desc').value=r.descripcion||'';
+  document.getElementById('f-espec').value=r.especialidad||'';
+  document.getElementById('f-prior').value=r.prioridad||'Media';
+  document.getElementById('f-fsolic').value=r.fecha_solicitud||'';
+  document.getElementById('f-obs').value=r.observaciones||'';
+  var btn=document.getElementById('btn-guardar');
+  btn.textContent='💾 Actualizar';btn.onclick=actualizarSTSolic;
+  fb.scrollIntoView({behavior:'smooth',block:'start'});
+}
+function actualizarSTSolic(){
+  var solicit=document.getElementById('f-solicit').value.trim();
+  var equipo=document.getElementById('f-equipo').value.trim();
+  var desc=document.getElementById('f-desc').value.trim();
+  var msg=document.getElementById('f-msg');
+  if(!equipo||!desc){msg.style.color='var(--red)';msg.textContent='Completá equipo y descripción';return;}
+  var btn=document.getElementById('btn-guardar');
+  btn.disabled=true;btn.textContent='Actualizando...';
+  fetch(VENC_URL,{method:'POST',body:JSON.stringify({
+    action:'updateST',id:editingSTId,solicitante:solicit,equipo:equipo,
+    sector:document.getElementById('f-sector').value,
+    descripcion:desc,especialidad:document.getElementById('f-espec').value,
+    prioridad:document.getElementById('f-prior').value,
+    fecha_solicitud:document.getElementById('f-fsolic').value,
+    observaciones:document.getElementById('f-obs').value
+  })})
+  .then(function(r){return r.json();})
+  .then(function(data){
+    btn.disabled=false;
+    if(data.ok){
+      msg.style.color='var(--green)';msg.textContent='✅ Tarea actualizada';
+      editingSTId=null;
+      btn.textContent='💾 Enviar solicitud';btn.onclick=guardarST;
+      limpiarForm();loadST();
+    } else {btn.textContent='💾 Actualizar';msg.style.color='var(--red)';msg.textContent='Error: '+(data.error||'desconocido');}
+  })
+  .catch(function(){btn.disabled=false;btn.textContent='💾 Actualizar';msg.style.color='var(--red)';msg.textContent='Error de conexión';});
+}
+function eliminarSTSolic(id){
+  if(!confirm('¿Eliminar esta tarea? Esta acción no se puede deshacer.'))return;
+  fetch(VENC_URL,{method:'POST',body:JSON.stringify({action:'deleteST',id:id})})
+    .then(function(r){return r.json();})
+    .then(function(data){if(data.ok){loadST();}else{alert('Error: '+(data.error||'desconocido'));}})
+    .catch(function(){alert('Error de conexión');});
+}
+
+/* ═══ CAMBIAR CONTRASEÑA ═══ */
+function abrirCambiarPass(){
+  document.getElementById('modal-pass-overlay').style.display='flex';
+  document.getElementById('pass-actual').value='';
+  document.getElementById('pass-nueva').value='';
+  document.getElementById('pass-confirmar').value='';
+  document.getElementById('pass-msg').textContent='';
+}
+function cerrarCambiarPass(){document.getElementById('modal-pass-overlay').style.display='none';}
+function guardarNuevaPass(){
+  var actual=document.getElementById('pass-actual').value.trim();
+  var nueva=document.getElementById('pass-nueva').value.trim();
+  var confirmar=document.getElementById('pass-confirmar').value.trim();
+  var msg=document.getElementById('pass-msg');
+  if(!actual||!nueva||!confirmar){msg.style.color='var(--red)';msg.textContent='Completá todos los campos';return;}
+  if(nueva!==confirmar){msg.style.color='var(--red)';msg.textContent='Las contraseñas nuevas no coinciden';return;}
+  msg.style.color='var(--text3)';msg.textContent='Guardando...';
+  fetch(VENC_URL,{method:'POST',body:JSON.stringify({action:'cambiarContrasena',usuario:currentUser,contrasena_actual:actual,contrasena_nueva:nueva})})
+    .then(function(r){return r.json();})
+    .then(function(data){
+      if(data.ok){msg.style.color='var(--green)';msg.textContent='✅ Contraseña actualizada';setTimeout(cerrarCambiarPass,1500);}
+      else{msg.style.color='var(--red)';msg.textContent=data.error||'Error desconocido';}
+    })
+    .catch(function(){msg.style.color='var(--red)';msg.textContent='Error de conexión';});
+}
+
+/* ═══ INIT ═══ */
+window.onload = function(){
+  document.getElementById('f-fsolic').value = toDateStr(today);
+  // Siempre mostrar login al arrancar
+  var hasSaved = initSession();
+  if(!hasSaved){
+    abrirLogin();
+  } else {
+    // Tiene sesión guardada — cargar datos
+    if(!isEditor()&&isSolicitante()){
+      document.getElementById('f-solicit').value=currentUser;
+    }
+    loadST();
+    loadActivos();
+  }
+};
+
+// Auto-refresh cada 5 min
+setInterval(function(){
+  if(currentUser){
+    loadST();
+    if(document.getElementById('view-activos').classList.contains('active')) loadActivos();
+  }
+}, 5*60*1000);
+</script>
+</body>
+</html>
