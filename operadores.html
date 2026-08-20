@@ -411,6 +411,8 @@ body{background:var(--bg);font-family:'DM Sans',sans-serif;color:var(--text);min
     <div class="modal-subtitle" id="obs-modal-sub">—</div>
     <div class="modal-info" id="obs-modal-info"></div>
 
+    <div id="obs-foto-guardada" style="display:none;margin-bottom:14px"></div>
+
     <div class="realizado-toggle" id="realizado-toggle" onclick="toggleRealizado()">
       <div class="realizado-toggle-box" id="realizado-box">✓</div>
       <span class="realizado-toggle-label" id="realizado-label">Marcar como realizada</span>
@@ -901,6 +903,42 @@ function renderHistorial(){
   document.getElementById('historial-content').innerHTML=html;
 }
 
+/* ═══ FOTO GUARDADA (DRIVE) ═══ */
+function driveFileId(url){
+  if(!url) return null;
+  var s=String(url);
+  var m=s.match(/\/d\/([a-zA-Z0-9_-]+)/);      // formato .../file/d/ID/view
+  if(m) return m[1];
+  m=s.match(/[?&]id=([a-zA-Z0-9_-]+)/);         // formato ...?id=ID
+  if(m) return m[1];
+  return null;
+}
+
+function renderFotoModal(fotoUrl){
+  var cont=document.getElementById('obs-foto-guardada');
+  if(!cont) return;
+  if(!fotoUrl || !String(fotoUrl).trim()){
+    cont.innerHTML='';
+    cont.style.display='none';
+    return;
+  }
+  var id=driveFileId(fotoUrl);
+  var thumb=id ? 'https://drive.google.com/thumbnail?id='+id+'&sz=w600' : null;
+  var html='<label style="font-size:11px;color:var(--text3);display:block;margin-bottom:6px;font-weight:600;text-transform:uppercase;letter-spacing:.5px">📷 Foto cargada</label>';
+  html+='<a href="'+fotoUrl+'" target="_blank" rel="noopener" title="Abrir foto en Drive (nueva pestaña)" style="display:inline-block;text-decoration:none">';
+  if(thumb){
+    html+='<img src="'+thumb+'" referrerpolicy="no-referrer" '
+        + 'style="max-width:200px;max-height:200px;border-radius:6px;border:1px solid var(--border);display:block;cursor:pointer" '
+        + 'onerror="this.style.display=\'none\';var f=document.getElementById(\'obs-foto-fallback\');if(f)f.style.display=\'inline-flex\';">';
+  }
+  html+='<span id="obs-foto-fallback" style="'+(thumb?'display:none;':'display:inline-flex;')
+      + 'align-items:center;gap:6px;padding:9px 16px;border:1px solid var(--border2);border-radius:6px;'
+      + 'color:var(--blue);font-weight:600;font-size:13px;background:var(--surface2);cursor:pointer">📷 Ver foto en Drive</span>';
+  html+='</a>';
+  cont.innerHTML=html;
+  cont.style.display='block';
+}
+
 /* ═══ MODAL OBSERVACIÓN ═══ */
 function abrirObsModal(tarea){
   obsModalTarea=tarea;
@@ -915,9 +953,15 @@ function abrirObsModal(tarea){
     '<div class="modal-info-row"><span class="modal-info-label">Especialidad</span><span class="modal-info-val">'+(tarea._espec==='electrico'?'⚡ Eléctrico':'⚙️ Mecánico')+'</span></div>';
 
   document.getElementById('obs-textarea').value=tarea.obs_operador||'';
+  document.getElementById('obs-textarea').readOnly=false;
   document.getElementById('obs-foto-preview').innerHTML='';
   document.getElementById('obs-foto-status').textContent='';
   document.getElementById('obs-foto-input').value='';
+  // Restaurar controles por si venían ocultos de verObs()
+  document.getElementById('realizado-toggle').style.display='';
+  document.getElementById('btn-guardar-obs').style.display='';
+  // Mostrar la foto que ya estaba guardada (columna K)
+  renderFotoModal(tarea.foto_operador);
 
   actualizarToggleRealizado();
   document.getElementById('obs-modal-overlay').classList.add('active');
@@ -941,6 +985,8 @@ function verObs(tarea){
   document.getElementById('obs-foto-status').textContent='';
   document.getElementById('realizado-toggle').style.display='none';
   document.getElementById('btn-guardar-obs').style.display='none';
+  // Mostrar la foto guardada (columna K)
+  renderFotoModal(tarea.foto_operador);
   document.getElementById('obs-modal-overlay').classList.add('active');
 }
 
@@ -1017,8 +1063,14 @@ function guardarObs(){
           if(t.fecha===obsModalTarea.fecha&&t.equipo===obsModalTarea.equipo&&t.descripcion===obsModalTarea.descripcion){
             t.realizado=obsRealizadoVal?'1':'0';
             t.obs_operador=obs;
+            // Si se subió una foto nueva, guardar su URL en memoria
+            if(data.foto&&data.foto.ok&&data.foto.url){t.foto_operador=data.foto.url;}
           }
         });
+        // Aviso si la foto se intentó subir pero falló (el resto sí se guardó)
+        if(data.foto&&data.foto.intentada&&!data.foto.ok){
+          mostrarToast('Foto no guardada','La tarea se guardó, pero la foto falló: '+(data.foto.error||'error desconocido'));
+        }
         cerrarObsModal();
         // Re-render vista activa
         if(document.getElementById('view-semana').classList.contains('active'))renderSemana();
