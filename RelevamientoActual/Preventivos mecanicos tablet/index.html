@@ -1,0 +1,1852 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Preventivos Mecánicos — Planta Explora</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap');
+:root{
+  --bg:#f4f5f7;--surface:#ffffff;--surface2:#f9fafb;--border:#e5e7eb;--border2:#d1d5db;
+  --text:#111827;--text2:#374151;--text3:#6b7280;--text4:#9ca3af;
+  --accent:#e67e22;--accent-light:#fff3e6;--accent-hover:#d35400;
+  --green:#16a34a;--green-light:#dcfce7;--red:#dc2626;--red-light:#fee2e2;
+  --blue:#2563eb;--blue-light:#dbeafe;--yellow:#ca8a04;--yellow-light:#fef9c3;
+  --purple:#7c3aed;--purple-light:#ede9fe;--orange:#ea580c;--orange-light:#fff7ed;
+  --sidebar-w:220px;--topbar-h:56px;--radius:10px;--radius-sm:6px;
+  --shadow:0 1px 3px rgba(0,0,0,.08),0 1px 2px rgba(0,0,0,.06);
+  --shadow-md:0 4px 16px rgba(0,0,0,.08);
+  --mod-accent:#e67e22;
+}
+#inc-print-wrap{display:none}
+.hidden{display:none!important}
+@media print{ body > *:not(#print-frame-wrap){display:none!important} #print-frame-wrap{display:block!important;position:fixed;top:0;left:0;width:100%;height:100%} #print-iframe{width:100%;height:100%;border:0} }
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);font-family:'DM Sans',sans-serif;color:var(--text);min-height:100vh;font-size:14px;display:flex;flex-direction:column}
+.topbar{background:var(--surface);border-bottom:1px solid var(--border);padding:0 24px 0 0;display:flex;justify-content:space-between;align-items:center;height:var(--topbar-h);position:fixed;top:0;left:0;right:0;z-index:200;box-shadow:var(--shadow)}
+.topbar-left{display:flex;align-items:center;height:100%}
+.topbar-brand{width:var(--sidebar-w);height:100%;display:flex;align-items:center;padding:0 20px;background:var(--surface);border-right:1px solid var(--border);flex-shrink:0}
+.plant{font-size:10px;color:var(--text4);text-transform:uppercase;letter-spacing:1.5px;font-weight:600}
+.title{font-size:13px;font-weight:700;color:var(--text);display:flex;align-items:center;gap:7px;margin-top:2px}
+.title-dot{width:9px;height:9px;background:var(--mod-accent);border-radius:2px;transform:rotate(8deg);flex-shrink:0}
+.topbar-right{display:flex;align-items:center;gap:14px}
+.last-update{font-size:11px;color:var(--text4);text-align:right}
+.last-update span{color:var(--green);font-weight:600}
+.user-pill{display:flex;align-items:center;gap:8px;background:var(--accent-light);border:1px solid #fed7aa;border-radius:20px;padding:5px 14px}
+.user-name{font-size:12px;font-weight:700;color:var(--accent)}
+.user-rol{font-size:10px;color:var(--text4);text-transform:uppercase;letter-spacing:.8px}
+.layout{display:flex;margin-top:var(--topbar-h);min-height:calc(100vh - var(--topbar-h))}
+.sidebar{width:var(--sidebar-w);background:var(--surface);border-right:1px solid var(--border);position:fixed;top:var(--topbar-h);left:0;bottom:0;overflow-y:auto;z-index:100;display:flex;flex-direction:column;box-shadow:2px 0 8px rgba(0,0,0,.04)}
+.sidebar-section{padding:10px 0 4px}
+.sidebar-label{font-size:10px;color:var(--text4);text-transform:uppercase;letter-spacing:1.2px;font-weight:700;padding:0 16px 6px}
+.nav-item{display:flex;align-items:center;gap:10px;padding:9px 16px;cursor:pointer;border:none;background:transparent;color:var(--text3);font-size:13px;font-weight:500;font-family:inherit;width:100%;text-align:left;transition:all .15s;position:relative}
+.nav-item:hover{background:var(--surface2);color:var(--text)}
+.nav-item.active{color:var(--mod-accent);font-weight:600;background:color-mix(in srgb,var(--mod-accent) 10%,white)}
+.nav-item.active::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--mod-accent);border-radius:0 2px 2px 0}
+.nav-icon{font-size:15px;width:20px;text-align:center;flex-shrink:0}
+.main{margin-left:var(--sidebar-w);flex:1;padding:24px 28px;overflow-x:hidden}
+.module{display:none}.module.active{display:block}
+.page-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px;flex-wrap:wrap;gap:12px}
+.page-title{font-size:18px;font-weight:700;color:var(--text)}
+.page-sub{font-size:12px;color:var(--text3);margin-top:2px}
+.inner-tabs{display:flex;gap:2px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:3px;margin-bottom:20px;width:fit-content}
+.itab{padding:6px 16px;font-size:12px;font-weight:600;cursor:pointer;border:none;border-radius:4px;color:var(--text3);background:transparent;font-family:inherit;transition:all .15s}
+.itab:hover{color:var(--text);background:var(--surface)}
+.itab.active{background:var(--surface);color:var(--mod-accent);box-shadow:var(--shadow)}
+.itab.locked{opacity:.4;cursor:not-allowed;pointer-events:none}
+.iview{display:none}.iview.active{display:block}
+.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:20px}
+.metric{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;text-align:center;box-shadow:var(--shadow)}
+.metric-label{font-size:11px;color:var(--text4);text-transform:uppercase;letter-spacing:.6px;font-weight:600;margin-bottom:6px}
+.metric-val{font-size:26px;font-weight:700;line-height:1}
+.section-box{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;margin-bottom:16px;box-shadow:var(--shadow)}
+.section-header{background:var(--surface2);padding:12px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;font-size:13px;font-weight:600}
+.filter-bar{display:flex;gap:10px;margin-bottom:16px;align-items:center;flex-wrap:wrap}
+select,input[type="text"],input[type="date"]{background:var(--surface);border:1px solid var(--border);color:var(--text2);font-size:12px;padding:7px 10px;border-radius:var(--radius-sm);font-family:inherit}
+select:focus,input:focus{outline:none;border-color:var(--mod-accent)}
+textarea{background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:8px 10px;border-radius:var(--radius-sm);font-size:13px;font-family:inherit;resize:vertical}
+.btn-accion{border:none;font-size:13px;font-weight:700;padding:9px 22px;border-radius:var(--radius-sm);cursor:pointer;font-family:inherit}
+.btn-accion.guardar{background:var(--mod-accent);color:#fff}
+.btn-accion.guardar:disabled{opacity:.4;cursor:not-allowed}
+table{width:100%;border-collapse:collapse;font-size:12px}
+th{text-align:left;padding:9px 12px;color:var(--text4);font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.6px;border-bottom:1px solid var(--border);background:var(--surface2);white-space:nowrap}
+td{padding:8px 12px;border-bottom:1px solid var(--border);vertical-align:middle;color:var(--text2)}
+tr:hover td{background:var(--accent-light)}
+.tag-cell{font-weight:700;color:var(--text);font-family:'DM Mono',monospace;font-size:11px}
+.obs-cell{color:var(--text4);font-size:11px;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.badge-ok{background:var(--green-light);color:var(--green);font-weight:600;border-radius:4px;padding:2px 8px;display:inline-block;border:1px solid #bbf7d0;font-size:11px}
+.badge-mal{background:var(--red-light);color:var(--red);font-weight:600;border-radius:4px;padding:2px 8px;display:inline-block;border:1px solid #fecaca;font-size:11px}
+.badge-si{background:var(--green-light);color:var(--green);font-weight:600;border-radius:4px;padding:2px 8px;display:inline-block;border:1px solid #bbf7d0;font-size:11px}
+.badge-no{background:var(--red-light);color:var(--red);font-weight:600;border-radius:4px;padding:2px 8px;display:inline-block;border:1px solid #fecaca;font-size:11px}
+.badge-nd{background:var(--surface2);color:var(--text4);font-weight:600;border-radius:4px;padding:2px 8px;display:inline-block;border:1px solid var(--border);font-size:11px}
+.carga-form{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin-bottom:20px;box-shadow:var(--shadow)}
+.form-row{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:12px;margin-bottom:16px}
+.form-field label{font-size:11px;color:var(--text3);display:block;margin-bottom:4px;font-weight:600;text-transform:uppercase;letter-spacing:.5px}
+.form-field input,.form-field select,.form-field textarea{width:100%;background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:8px 10px;border-radius:var(--radius-sm);font-size:13px;font-family:inherit}
+.form-field input:focus,.form-field select:focus,.form-field textarea:focus{outline:none;border-color:var(--mod-accent)}
+.carga-table{width:100%;border-collapse:collapse;font-size:12px;margin-bottom:12px}
+.carga-table th{text-align:left;padding:8px 10px;color:var(--text4);font-size:11px;text-transform:uppercase;border-bottom:1px solid var(--border);background:var(--surface2)}
+.carga-table td{padding:7px 10px;border-bottom:1px solid var(--border);vertical-align:middle}
+.carga-table td:first-child{font-weight:500;color:var(--text);white-space:normal}
+.carga-table input[type=text]{width:100%;background:var(--surface2);border:1px solid var(--border);color:var(--text);font-size:12px;padding:5px 8px;border-radius:4px;font-family:inherit}
+.ficha-kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px}
+.ficha-kpi{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;box-shadow:var(--shadow)}
+.ficha-kpi .lbl{font-size:11px;color:var(--text4);text-transform:uppercase;letter-spacing:.6px;font-weight:600;margin-bottom:6px}
+.ficha-kpi .val{font-size:18px;font-weight:700;color:var(--mod-accent);overflow:hidden;text-overflow:ellipsis}
+.ficha-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:14px;box-shadow:var(--shadow)}
+.ficha-card h3{font-size:11px;color:var(--text4);text-transform:uppercase;letter-spacing:.8px;font-weight:600;margin-bottom:12px}
+.loading{color:var(--text4);font-size:13px;padding:1.5rem;text-align:center}
+.error-msg{color:var(--red);font-size:13px;padding:1rem}
+.msg-ok{color:var(--green);font-size:13px}
+.msg-err{color:var(--red);font-size:13px}
+.no-data{color:var(--text4);text-align:center;padding:40px;font-size:13px}
+.tbl-wrap{overflow-x:auto;max-height:460px;overflow-y:auto}
+.sec-title{font-size:12px;font-weight:700;color:var(--mod-accent);text-transform:uppercase;letter-spacing:.5px;margin:14px 0 6px;padding-bottom:4px;border-bottom:2px solid var(--accent-light)}
+.eq-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px;margin-bottom:20px;width:100%}
+.eq-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;cursor:pointer;transition:all .15s;box-shadow:var(--shadow)}
+.eq-card:hover{border-color:var(--mod-accent);box-shadow:var(--shadow-md)}
+.eq-card.ok{border-left:4px solid var(--green)}
+.eq-card.mal{border-left:4px solid var(--red)}
+.eq-card.nd{border-left:4px solid var(--border2)}
+.eq-card-title{font-size:14px;font-weight:700;color:var(--text);margin-bottom:3px}
+.eq-card-fecha{font-size:11px;color:var(--text4);margin-bottom:8px}
+.check-group{display:flex;gap:6px}
+.check-btn{padding:4px 14px;border-radius:14px;font-size:11px;font-weight:700;cursor:pointer;border:2px solid transparent;transition:all .12s;opacity:.35;font-family:inherit}
+.check-btn:hover{opacity:.75}
+.check-btn.sel{opacity:1}
+.check-btn.SI{background:var(--green-light);color:var(--green);border-color:var(--green)}
+.check-btn.NO{background:var(--red-light);color:var(--red);border-color:var(--red)}
+.taah-sec-hdr{background:var(--accent-light);border:1px solid #fed7aa;border-radius:var(--radius-sm);padding:8px 14px;font-size:12px;font-weight:700;color:var(--mod-accent);margin:12px 0 8px}
+
+/* ── TABLET 8-10" ── */
+@media (max-width:1024px){
+  :root{--sidebar-w:60px;--topbar-h:50px;}
+  .topbar-brand{width:var(--sidebar-w);padding:0 10px;justify-content:center;}
+  .topbar-brand > div{display:none;}
+  .topbar-brand::after{content:'⚙️';font-size:20px;}
+  .plant,.title{display:none;}
+  .sidebar-label{display:none;}
+  .nav-item{padding:10px 0;justify-content:center;font-size:0;}
+  .nav-item .nav-icon{font-size:18px;width:auto;margin:0;}
+  .nav-item::before{border-radius:0 3px 3px 0;}
+  .main{margin-left:var(--sidebar-w);padding:14px 12px;}
+  .metrics{grid-template-columns:repeat(2,1fr);gap:8px;}
+  .metric-val{font-size:20px;}
+  .metric-label{font-size:10px;}
+  .eq-grid{grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px;}
+  .form-row{grid-template-columns:1fr 1fr;}
+  .ficha-kpis{grid-template-columns:repeat(2,1fr);}
+  .page-title{font-size:15px;}
+  .page-sub{font-size:11px;}
+  .last-update{font-size:10px;display:none;}
+  .topbar-right{gap:8px;}
+  .section-header{font-size:12px;padding:10px 12px;}
+  table{font-size:11px;}
+  th,td{padding:6px 8px;}
+}
+@media (max-width:600px){
+  .form-row{grid-template-columns:1fr;}
+  .inner-tabs{flex-wrap:wrap;}
+  .itab{font-size:11px;padding:5px 10px;}
+}
+
+
+/* ══ VIBRACIONES MODULE CSS ══ */
+.vib-view{display:none}.vib-view.vib-active{display:block}
+.vib-loading-wrap{display:flex;flex-direction:column;align-items:center;justify-content:center;height:50vh;gap:14px}
+.vib-spinner{width:36px;height:36px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite}
+.bombas-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px}
+.bomba-card{background:var(--surface);border:2px solid var(--border);border-radius:var(--radius);padding:12px;text-align:center;cursor:pointer;transition:all .2s}
+.bomba-card:hover{transform:translateY(-2px);box-shadow:var(--shadow-md)}
+.bomba-card.critico{border-color:var(--red);background:var(--red-light)}
+.bomba-card.alerta{border-color:var(--yellow);background:var(--yellow-light)}
+.bomba-card.inicio{border-color:#ea580c;background:#fff7ed}
+.bomba-card.ok{border-color:var(--green);background:var(--green-light)}
+@keyframes pulse-vib{0%,100%{box-shadow:0 0 0 0 rgba(220,38,38,.3)}50%{box-shadow:0 0 0 6px rgba(220,38,38,0)}}
+.bomba-card.critico{animation:pulse-vib 2s infinite}
+.bomba-tag{font-size:11px;font-weight:700;color:var(--text);margin-bottom:4px;font-family:'DM Mono',monospace}
+.bomba-val{font-size:20px;font-weight:700;line-height:1.2}
+.bomba-card.critico .bomba-val{color:var(--red)}.bomba-card.alerta .bomba-val{color:var(--yellow)}
+.bomba-card.inicio .bomba-val{color:#ea580c}.bomba-card.ok .bomba-val{color:var(--green)}
+.bomba-estado{font-size:10px;font-weight:700;text-transform:uppercase;margin-top:3px}
+.bomba-card.critico .bomba-estado{color:var(--red)}.bomba-card.alerta .bomba-estado{color:var(--yellow)}
+.bomba-card.inicio .bomba-estado{color:#ea580c}.bomba-card.ok .bomba-estado{color:var(--green)}
+.bomba-fecha{font-size:10px;color:var(--text4);margin-top:2px}
+.bomba-pto{font-size:10px;color:var(--text4)}
+.vib-kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px}
+.vib-kpi{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;text-align:center;box-shadow:var(--shadow)}
+.vib-kpi .lbl{font-size:11px;color:var(--text4);text-transform:uppercase;letter-spacing:.6px;font-weight:600;margin-bottom:6px}
+.vib-kpi .val{font-size:28px;font-weight:700;line-height:1}
+.vib-kpi.red .val{color:var(--red)}.vib-kpi.orange .val{color:#ea580c}
+.vib-kpi.yellow .val{color:var(--yellow)}.vib-kpi.green .val{color:var(--green)}
+.vib-g2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}
+.vib-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:12px;box-shadow:var(--shadow)}
+.vib-card h3{font-size:11px;color:var(--text4);text-transform:uppercase;letter-spacing:.8px;font-weight:600;margin-bottom:12px}
+.vib-legend-row{display:flex;gap:12px;margin-bottom:12px;flex-wrap:wrap;align-items:center}
+.vib-leg-item{display:flex;align-items:center;gap:5px;font-size:12px;color:var(--text3)}
+.vib-leg-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.rank-list{display:flex;flex-direction:column;gap:6px}
+.rank-item{display:flex;align-items:center;gap:8px}
+.rank-num{font-size:11px;color:var(--text4);width:18px;text-align:right;flex-shrink:0}
+.rank-tag{font-size:11px;color:var(--text2);width:100px;flex-shrink:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-family:'DM Mono',monospace}
+.rank-bw{flex:1;background:var(--surface2);border-radius:4px;height:18px;overflow:hidden;border:1px solid var(--border)}
+.rank-b{height:100%;border-radius:4px;display:flex;align-items:center;padding-left:6px}
+.rank-b.critico{background:#fee2e2}.rank-b.alerta{background:#fef9c3}
+.rank-b.inicio{background:#fff7ed}.rank-b.ok{background:#dcfce7}
+.rank-b span{font-size:10px;font-weight:700;color:var(--text2)}
+.vib-esquema-wrap{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:16px;box-shadow:var(--shadow)}
+.vib-svg-wrap{width:100%;background:var(--surface2);border-radius:var(--radius-sm);overflow:hidden;border:1px solid var(--border)}
+.vib-svg-wrap svg{width:100%;height:auto;display:block}
+.vib-carga-wrap{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px;box-shadow:var(--shadow)}
+.vib-carga-top{display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;margin-bottom:16px}
+.vib-carga-field{display:flex;flex-direction:column;gap:4px}
+.vib-carga-field label{font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;font-weight:600}
+.vib-carga-field select,.vib-carga-field input{background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:7px 10px;border-radius:var(--radius-sm);font-size:12px;font-family:inherit}
+.vib-zona-c{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px;display:inline-flex;flex-direction:column;width:fit-content}
+.vib-zona-c-title{font-size:10px;font-weight:700;color:var(--text3);text-align:center;margin-bottom:8px;text-transform:uppercase;letter-spacing:.8px}
+.vib-zona-tipo{font-size:11px;color:var(--text4);margin:6px 0 4px;font-weight:500}
+.vib-puntos-row{display:flex;gap:8px;flex-wrap:nowrap}
+.vib-pto{width:62px;height:62px;border-radius:50%;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;border:2px solid var(--border2);background:var(--surface);transition:all .15s;flex-shrink:0}
+.vib-pto:hover{transform:scale(1.08);box-shadow:var(--shadow-md)}
+.vib-pto .pn{font-size:10px;font-weight:600;color:var(--text4);line-height:1.2;font-family:'DM Mono',monospace}
+.vib-pto .pv{font-size:13px;font-weight:700;color:var(--text);line-height:1.3}
+.vib-overlay{display:none;position:fixed;top:0;left:0;width:100%;height:100%;z-index:1999;background:rgba(0,0,0,.35)}
+.vib-popup{display:none;position:fixed;z-index:2000;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px;width:220px;box-shadow:var(--shadow-md);text-align:center}
+.vib-popup .vp-inp{width:100%;background:var(--surface2);border:2px solid var(--accent);color:var(--text);padding:10px;border-radius:var(--radius-sm);font-size:22px;text-align:center;outline:none;margin-bottom:12px;font-weight:700;font-family:'DM Mono',monospace}
+.vib-inner-nav{display:flex;gap:2px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:3px;margin-bottom:20px;width:fit-content}
+.vib-inner-nav .vitab{padding:6px 16px;font-size:12px;font-weight:600;cursor:pointer;border:none;border-radius:4px;color:var(--text3);background:transparent;font-family:inherit;transition:all .15s}
+.vib-inner-nav .vitab:hover{color:var(--text);background:var(--surface)}
+.vib-inner-nav .vitab.active{background:var(--surface);color:var(--mod-accent);box-shadow:var(--shadow)}
+@media(max-width:1024px){
+  .vib-kpi-row{grid-template-columns:repeat(2,1fr);}
+  .vib-g2{grid-template-columns:1fr;}
+  .bombas-grid{grid-template-columns:repeat(auto-fill,minmax(110px,1fr));}
+}
+
+</style>
+</head>
+<body>
+
+<!-- LOGIN OVERLAY -->
+<div id="login-overlay" style="position:fixed;inset:0;background:#1a1a2e;z-index:9999;display:flex;align-items:center;justify-content:center;font-family:'DM Sans',sans-serif;">
+  <div style="background:#fff;border-radius:14px;padding:36px 32px;width:340px;box-shadow:0 20px 60px rgba(0,0,0,.35);text-align:center;">
+    <div style="font-size:11px;color:#9ca3af;text-transform:uppercase;letter-spacing:1.5px;font-weight:600;margin-bottom:4px;">Planta Explora</div>
+    <div style="font-size:20px;font-weight:800;color:#111827;margin-bottom:4px;display:flex;align-items:center;justify-content:center;gap:8px;">
+      <span style="display:inline-block;width:10px;height:10px;background:#e67e22;border-radius:2px;transform:rotate(8deg);"></span>PREV. MECÁNICOS
+    </div>
+    <div style="font-size:12px;color:#6b7280;margin-bottom:28px;">Iniciá sesión para continuar</div>
+    <div style="text-align:left;margin-bottom:14px;">
+      <label style="font-size:11px;font-weight:700;color:#374151;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:5px;">Usuario</label>
+      <input id="login-user" type="text" placeholder="Tu usuario" style="width:100%;padding:10px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;font-family:inherit;outline:none;" onkeydown="if(event.key==='Enter')document.getElementById('login-pass').focus()"/>
+    </div>
+    <div style="text-align:left;margin-bottom:20px;">
+      <label style="font-size:11px;font-weight:700;color:#374151;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:5px;">Contraseña</label>
+      <input id="login-pass" type="password" placeholder="Tu contraseña" style="width:100%;padding:10px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;font-family:inherit;outline:none;" onkeydown="if(event.key==='Enter')doLogin()"/>
+    </div>
+    <div id="login-error" style="color:#dc2626;font-size:12px;margin-bottom:12px;min-height:16px;"></div>
+    <button onclick="doLogin()" style="width:100%;background:#e67e22;color:#fff;border:none;padding:11px;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;">Ingresar</button>
+    <div id="login-loading" style="display:none;color:#6b7280;font-size:12px;margin-top:10px;">Verificando...</div>
+  </div>
+</div>
+
+<!-- CAMBIAR CONTRASEÑA OVERLAY -->
+<div id="cp-overlay" class="hidden" style="position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9998;display:flex;align-items:center;justify-content:center;">
+  <div style="background:#fff;border-radius:14px;padding:32px 28px;width:320px;box-shadow:0 20px 60px rgba(0,0,0,.3);">
+    <div style="font-size:15px;font-weight:700;color:#111827;margin-bottom:20px;">Cambiar contraseña</div>
+    <div style="margin-bottom:12px;">
+      <label style="font-size:11px;font-weight:700;color:#374151;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:4px;">Contraseña actual</label>
+      <input id="cp-actual" type="password" style="width:100%;padding:9px 11px;border:1.5px solid #e5e7eb;border-radius:7px;font-size:13px;font-family:inherit;outline:none;"/>
+    </div>
+    <div style="margin-bottom:12px;">
+      <label style="font-size:11px;font-weight:700;color:#374151;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:4px;">Nueva contraseña</label>
+      <input id="cp-nueva" type="password" style="width:100%;padding:9px 11px;border:1.5px solid #e5e7eb;border-radius:7px;font-size:13px;font-family:inherit;outline:none;"/>
+    </div>
+    <div style="margin-bottom:16px;">
+      <label style="font-size:11px;font-weight:700;color:#374151;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:4px;">Confirmar nueva contraseña</label>
+      <input id="cp-confirmar" type="password" style="width:100%;padding:9px 11px;border:1.5px solid #e5e7eb;border-radius:7px;font-size:13px;font-family:inherit;outline:none;"/>
+    </div>
+    <div id="cp-error" style="color:#dc2626;font-size:12px;margin-bottom:12px;min-height:16px;"></div>
+    <div style="display:flex;gap:10px;">
+      <button onclick="document.getElementById('cp-overlay').classList.add('hidden')" style="flex:1;padding:9px;border:1.5px solid #e5e7eb;background:#fff;border-radius:7px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;">Cancelar</button>
+      <button onclick="guardarCambioPass()" style="flex:1;padding:9px;background:#e67e22;color:#fff;border:none;border-radius:7px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;">Guardar</button>
+    </div>
+  </div>
+</div>
+
+
+<div class="topbar">
+  <div class="topbar-left">
+    <div class="topbar-brand">
+      <div>
+        <div class="plant">Planta Explora</div>
+        <div class="title"><span class="title-dot"></span><span>PREV. MECÁNICOS</span></div>
+      </div>
+    </div>
+  </div>
+  <div class="topbar-right">
+    <div class="last-update">Última actualización<br><span id="hdr-time">—</span></div>
+    <div class="user-pill" id="user-pill" style="display:none;gap:10px;cursor:default;">
+      <div>
+        <div class="user-name" id="user-name-top">—</div>
+        <div class="user-rol" id="user-rol-top">—</div>
+      </div>
+      <div style="display:flex;gap:6px;">
+        <button onclick="document.getElementById('cp-overlay').classList.remove('hidden')" title="Cambiar contraseña" style="background:#fff3e6;border:1px solid #fed7aa;color:#e67e22;border-radius:6px;padding:3px 8px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;">🔑</button>
+        <button onclick="doLogout()" title="Cerrar sesión" style="background:#fee2e2;border:1px solid #fecaca;color:#dc2626;border-radius:6px;padding:3px 8px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;">✕</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="layout">
+  <div class="sidebar">
+    <div class="sidebar-section">
+      <div class="sidebar-label">Módulos</div>
+      <button class="nav-item active" id="mbtn-auto" onclick="switchModule('auto')"><span class="nav-icon">🚜</span> Autoelevador</button>
+      <button class="nav-item" id="mbtn-comp" onclick="switchModule('comp')"><span class="nav-icon">💨</span> Compresores</button>
+      <button class="nav-item" id="mbtn-gen" onclick="switchModule('gen')"><span class="nav-icon">⚡</span> Generador</button>
+      <button class="nav-item" id="mbtn-inc" onclick="switchModule('inc')"><span class="nav-icon">🔥</span> Red c/ Incendio</button>
+      <button class="nav-item" id="mbtn-taah" onclick="switchModule('taah')"><span class="nav-icon">🛢️</span> Insp. TAAH</button>
+      <button class="nav-item" id="mbtn-vib" onclick="switchModule('vib')"><span class="nav-icon">〰️</span> Vibraciones</button>
+    </div>
+  </div>
+
+  <div class="main">
+
+    <!-- ══ AUTOELEVADOR ══ -->
+    <div class="module active" id="mod-auto">
+      <div class="page-header">
+        <div><div class="page-title">🚜 Autoelevador</div><div class="page-sub">Inspección semanal del autoelevador</div></div>
+      </div>
+      <div class="inner-tabs">
+        <button class="itab active" onclick="autoTab('general',this)">📊 Vista General</button>
+        <button class="itab" onclick="autoTab('historial',this)">📋 Historial</button>
+        <button class="itab" id="auto-tab-carga" onclick="autoTab('carga',this)">📝 Cargar Inspección</button>
+      </div>
+      <div class="iview active" id="auto-view-general">
+        <div class="metrics">
+          <div class="metric" style="border-top:3px solid var(--green)"><div class="metric-label">Último Estado</div><div class="metric-val" id="auto-m-estado" style="color:var(--green);font-size:14px">—</div></div>
+          <div class="metric" style="border-top:3px solid var(--blue)"><div class="metric-label">Última Fecha</div><div class="metric-val" id="auto-m-fecha" style="color:var(--blue);font-size:15px">—</div></div>
+          <div class="metric" style="border-top:3px solid var(--orange)"><div class="metric-label">Horas de Uso</div><div class="metric-val" id="auto-m-horas" style="color:var(--orange)">—</div></div>
+          <div class="metric" style="border-top:3px solid var(--border2)"><div class="metric-label">Total Registros</div><div class="metric-val" id="auto-m-total" style="color:var(--text3)">—</div></div>
+        </div>
+        <div class="section-box">
+          <div class="section-header">📋 Último Preventivo</div>
+          <div id="auto-general-content" style="padding:16px"><p class="loading">Cargando...</p></div>
+        </div>
+      </div>
+      <div class="iview" id="auto-view-historial">
+        <div class="filter-bar">
+          <label style="font-size:11px;color:var(--text3);font-weight:600">Mostrar:</label>
+          <select id="auto-h-filtro" onchange="autoRenderHistorial()"><option value="">Todos</option><option value="mal">Con problemas</option></select>
+        </div>
+        <div class="tbl-wrap"><div id="auto-historial-content"><p class="loading">Cargando...</p></div></div>
+      </div>
+      <div class="iview" id="auto-view-carga">
+        <div class="carga-form">
+          <div class="form-row">
+            <div class="form-field"><label>Fecha</label><input type="date" id="auto-c-fecha"></div>
+            <div class="form-field"><label>Horas de uso</label><input type="text" id="auto-c-horas" placeholder="Ej: 3676"></div>
+            <div class="form-field"><label>Realizó</label><input type="text" id="auto-c-realizo" placeholder="Nombre del operario"></div>
+            <div class="form-field"><label>OT N°</label><input type="text" id="auto-c-ot" placeholder="N° de OT"></div>
+          </div>
+          <table class="carga-table">
+            <thead><tr><th>Ítem de inspección</th><th style="width:150px">Estado</th><th>Observaciones</th></tr></thead>
+            <tbody id="auto-c-tbody"></tbody>
+          </table>
+          <div class="form-field" style="margin-bottom:16px"><label>Observaciones generales</label><textarea id="auto-c-obs" rows="2" style="width:100%"></textarea></div>
+          <div style="display:flex;gap:10px;align-items:center">
+            <button class="btn-accion guardar" onclick="autoGuardar()">💾 Guardar Inspección</button>
+            <button class="btn-accion" style="background:var(--surface2);border:1px solid var(--border2);color:var(--text3)" onclick="autoLimpiar()">🗑 Limpiar</button>
+            <span id="auto-c-msg"></span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ COMPRESORES ══ -->
+    <div class="module" id="mod-comp">
+      <div class="page-header">
+        <div><div class="page-title">💨 Compresores de Aire</div><div class="page-sub">Preventivo COM-780102 y COM-780104</div></div>
+      </div>
+      <div class="inner-tabs">
+        <button class="itab active" onclick="compTab('general',this)">📊 Vista General</button>
+        <button class="itab" onclick="compTab('historial',this)">📋 Historial</button>
+        <button class="itab" id="comp-tab-carga" onclick="compTab('carga',this)">📝 Cargar Preventivo</button>
+      </div>
+      <div class="iview active" id="comp-view-general"><div id="comp-general-content"><p class="loading">Cargando...</p></div></div>
+      <div class="iview" id="comp-view-historial">
+        <div class="filter-bar">
+          <label style="font-size:11px;color:var(--text3);font-weight:600">Compresor:</label>
+          <select id="comp-h-equipo" onchange="compCargarHistorial()">
+            <option value="COM-780102">COM-780102</option>
+            <option value="COM-780104">COM-780104</option>
+          </select>
+        </div>
+        <div class="tbl-wrap"><div id="comp-historial-content"><p class="loading">Cargando...</p></div></div>
+      </div>
+      <div class="iview" id="comp-view-carga">
+        <div class="carga-form">
+          <div class="form-row">
+            <div class="form-field"><label>Fecha</label><input type="date" id="comp-c-fecha"></div>
+            <div class="form-field"><label>Realizó</label><input type="text" id="comp-c-realizo" placeholder="Nombre del operario"></div>
+            <div class="form-field"><label>OT N°</label><input type="text" id="comp-c-ot" placeholder="N° de OT"></div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:4px">
+            <div>
+              <div class="sec-title">COM-780102 — Ingersoll</div>
+              <table class="carga-table"><thead><tr><th>Ítem</th><th>Estado / Valor</th></tr></thead><tbody id="comp-c-tbody-102"></tbody></table>
+              <div class="form-field"><label>Observaciones</label><textarea id="comp-c-obs-102" rows="2" style="width:100%"></textarea></div>
+            </div>
+            <div>
+              <div class="sec-title">COM-780104 — CETEC</div>
+              <table class="carga-table"><thead><tr><th>Ítem</th><th>Estado / Valor</th></tr></thead><tbody id="comp-c-tbody-104"></tbody></table>
+              <div class="form-field"><label>Observaciones</label><textarea id="comp-c-obs-104" rows="2" style="width:100%"></textarea></div>
+            </div>
+          </div>
+          <div style="display:flex;gap:10px;align-items:center;margin-top:16px">
+            <button class="btn-accion guardar" onclick="compGuardar()">💾 Guardar Preventivo</button>
+            <button class="btn-accion" style="background:var(--surface2);border:1px solid var(--border2);color:var(--text3)" onclick="compLimpiar()">🗑 Limpiar</button>
+            <span id="comp-c-msg"></span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ GENERADOR ══ -->
+    <div class="module" id="mod-gen">
+      <div class="page-header">
+        <div><div class="page-title">⚡ Generador de Emergencia</div><div class="page-sub">Preventivo semanal del grupo generador</div></div>
+      </div>
+      <div class="inner-tabs">
+        <button class="itab active" onclick="genTab('general',this)">📊 Vista General</button>
+        <button class="itab" onclick="genTab('historial',this)">📋 Historial</button>
+        <button class="itab" id="gen-tab-carga" onclick="genTab('carga',this)">📝 Cargar Preventivo</button>
+      </div>
+      <div class="iview active" id="gen-view-general">
+        <div class="metrics">
+          <div class="metric" style="border-top:3px solid var(--blue)"><div class="metric-label">Última Fecha</div><div class="metric-val" id="gen-m-fecha" style="color:var(--blue);font-size:15px">—</div></div>
+          <div class="metric" style="border-top:3px solid var(--orange)"><div class="metric-label">Horas Func.</div><div class="metric-val" id="gen-m-horas" style="color:var(--orange)">—</div></div>
+          <div class="metric" style="border-top:3px solid var(--purple)"><div class="metric-label">Tensión Baterías</div><div class="metric-val" id="gen-m-tension" style="color:var(--purple);font-size:18px">—</div></div>
+          <div class="metric" style="border-top:3px solid var(--green)"><div class="metric-label">KWh</div><div class="metric-val" id="gen-m-kwh" style="color:var(--green)">—</div></div>
+        </div>
+        <div class="section-box">
+          <div class="section-header">📋 Último Preventivo</div>
+          <div id="gen-general-content" style="padding:16px"><p class="loading">Cargando...</p></div>
+        </div>
+      </div>
+      <div class="iview" id="gen-view-historial">
+        <div class="tbl-wrap"><div id="gen-historial-content"><p class="loading">Cargando...</p></div></div>
+      </div>
+      <div class="iview" id="gen-view-carga">
+        <div class="carga-form">
+          <div class="form-row">
+            <div class="form-field"><label>Fecha</label><input type="date" id="gen-c-fecha"></div>
+            <div class="form-field"><label>Operador</label><input type="text" id="gen-c-operador" placeholder="Nombre del operador"></div>
+            <div class="form-field"><label>OT N°</label><input type="text" id="gen-c-ot" placeholder="N° de OT"></div>
+          </div>
+          <table class="carga-table">
+            <thead><tr><th>Ítem</th><th style="width:180px">Estado / Valor</th><th>Observaciones</th></tr></thead>
+            <tbody id="gen-c-tbody"></tbody>
+          </table>
+          <div class="form-field" style="margin-bottom:16px"><label>Observaciones generales</label><textarea id="gen-c-obs" rows="2" style="width:100%"></textarea></div>
+          <div style="display:flex;gap:10px;align-items:center">
+            <button class="btn-accion guardar" onclick="genGuardar()">💾 Guardar Preventivo</button>
+            <button class="btn-accion" style="background:var(--surface2);border:1px solid var(--border2);color:var(--text3)" onclick="genLimpiar()">🗑 Limpiar</button>
+            <span id="gen-c-msg"></span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ RED CONTRA INCENDIO ══ -->
+    <div class="module" id="mod-inc">
+      <div class="page-header">
+        <div><div class="page-title">🔥 Red Contra Incendio</div><div class="page-sub">Prueba de diluvios por área</div></div>
+      </div>
+      <div class="inner-tabs">
+        <button class="itab active" onclick="incTab('general',this)">📊 Vista General</button>
+        <button class="itab" onclick="incTab('historial',this)">📋 Historial</button>
+        <button class="itab" id="inc-tab-carga" onclick="incTab('carga',this)">📝 Cargar Prueba</button>
+      </div>
+      <div class="iview active" id="inc-view-general"><div id="inc-general-content"><p class="loading">Cargando...</p></div></div>
+      <div class="iview" id="inc-view-historial">
+        <div class="tbl-wrap"><div id="inc-historial-content"><p class="loading">Cargando...</p></div></div>
+      </div>
+      <div class="iview" id="inc-view-carga">
+        <div class="carga-form">
+          <div class="form-row">
+            <div class="form-field"><label>Fecha</label><input type="date" id="inc-c-fecha"></div>
+            <div class="form-field"><label>Realizó</label><input type="text" id="inc-c-realizo" placeholder="Nombre del operario"></div>
+            <div class="form-field"><label>OT N°</label><input type="text" id="inc-c-ot" placeholder="N° de OT"></div>
+          </div>
+          <div id="inc-c-container"></div>
+          <div style="display:flex;gap:10px;align-items:center;margin-top:16px">
+            <button class="btn-accion guardar" onclick="incGuardar()">💾 Guardar Prueba</button>
+            <button class="btn-accion" style="background:var(--surface2);border:1px solid var(--border2);color:var(--text3)" onclick="incLimpiar()">🗑 Limpiar</button>
+            <span id="inc-c-msg"></span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ TAAH ══ -->
+    <div class="module" id="mod-taah" style="width:100%;overflow:hidden">
+      <div class="page-header">
+        <div><div class="page-title">🛢️ Inspección Visual TAAH</div><div class="page-sub">Control mensual de condición externo — Res. SE 277/25</div></div>
+      </div>
+      <div class="inner-tabs">
+        <button class="itab active" onclick="taahTab('general',this)">📊 Vista General</button>
+        <button class="itab" onclick="taahTab('ficha',this)">🔍 Ficha de Tanque</button>
+        <button class="itab" id="taah-tab-carga" onclick="taahTab('carga',this)">📝 Cargar Inspección</button>
+      </div>
+      <div class="iview active" id="taah-view-general"><div id="taah-general-content"><p class="loading">Cargando...</p></div></div>
+      <div class="iview" id="taah-view-ficha">
+        <div class="filter-bar">
+          <label style="font-size:11px;color:var(--text3);font-weight:600">Tanque:</label>
+          <select id="taah-f-tanque" onchange="taahCargarFicha()">
+            <option value="">Todos los tanques</option>
+            <option>TXX-630101</option><option>TXX-630102</option><option>TXX-630201</option>
+            <option>TXX-790101</option><option>TXX-790301</option><option>TXX-620202</option><option>TXX-620203</option>
+          </select>
+        </div>
+        <div id="taah-ficha-content"><p class="loading">Cargando...</p></div>
+      </div>
+      <div class="iview" id="taah-view-carga">
+        <div class="carga-form">
+          <div class="form-row">
+            <div class="form-field"><label>Tanque</label>
+              <select id="taah-c-tanque"><option value="">— Seleccioná —</option>
+                <option>TXX-630101</option><option>TXX-630102</option><option>TXX-630201</option>
+                <option>TXX-790101</option><option>TXX-790301</option><option>TXX-620202</option><option>TXX-620203</option>
+              </select></div>
+            <div class="form-field"><label>Fecha</label><input type="date" id="taah-c-fecha"></div>
+            <div class="form-field"><label>Operador</label><input type="text" id="taah-c-operador" placeholder="Nombre del operador"></div>
+            <div class="form-field"><label>OT N°</label><input type="text" id="taah-c-ot" placeholder="N° de OT"></div>
+          </div>
+          <div id="taah-c-secciones"></div>
+          <div class="form-field" style="margin:12px 0"><label>Observaciones generales</label><textarea id="taah-c-obs" rows="2" style="width:100%"></textarea></div>
+          <div style="display:flex;gap:10px;align-items:center">
+            <button class="btn-accion guardar" onclick="taahGuardar()">💾 Guardar Inspección</button>
+            <button class="btn-accion" style="background:var(--surface2);border:1px solid var(--border2);color:var(--text3)" onclick="taahLimpiar()">🗑 Limpiar</button>
+            <span id="taah-c-msg"></span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ VIBRACIONES ══ -->
+    <div class="module" id="mod-vib">
+      <div class="page-header">
+        <div><div class="page-title">〰️ Vibraciones de Bombas</div><div class="page-sub">Monitoreo de aceleración y velocidad</div></div>
+        <div style="font-size:11px;color:var(--text4)" id="vib-upd-time"></div>
+      </div>
+      <!-- Inner nav tabs -->
+      <div class="inner-tabs">
+        <button class="itab active" id="vib-nav-general" onclick="vibSwitchTab('general')">🗺️ Vista General</button>
+        <button class="itab" id="vib-nav-ficha" onclick="vibSwitchTab('ficha')">🔍 Ficha Bomba</button>
+        <button class="itab" id="vib-nav-carga" onclick="vibSwitchTab('carga')">📝 Cargar</button>
+      </div>
+
+      <!-- Loading -->
+      <div class="vib-loading-wrap" id="vib-loading">
+        <div class="vib-spinner"></div>
+        <div style="color:var(--text4);font-size:13px">Cargando datos de vibraciones...</div>
+      </div>
+
+      <!-- Vista General -->
+      <div class="vib-view" id="vib-page-general">
+        <div id="vib-fbar-general" style="margin-bottom:16px">
+          <div class="filter-bar">
+            <label style="font-size:11px;color:var(--text3);font-weight:600">Mostrar:</label>
+            <select id="vib-f-estado" onchange="vibRenderGeneral()">
+              <option value="criticas">⚠️ Solo con alertas</option>
+              <option value="ALL">Todas las bombas</option>
+            </select>
+            <button class="btn-accion guardar" style="margin-left:auto;padding:6px 14px;font-size:12px" onclick="vibLoadData()">🔄 Actualizar</button>
+          </div>
+        </div>
+        <div class="vib-legend-row">
+          <div class="vib-leg-item"><div class="vib-leg-dot" style="background:var(--red)"></div>Crítico &gt;5g</div>
+          <div class="vib-leg-item"><div class="vib-leg-dot" style="background:var(--yellow)"></div>Alerta 2.5–5g</div>
+          <div class="vib-leg-item"><div class="vib-leg-dot" style="background:#ea580c"></div>Inicio 1.5–2.5g</div>
+          <div class="vib-leg-item"><div class="vib-leg-dot" style="background:var(--green)"></div>OK &lt;1.5g</div>
+        </div>
+        <div class="vib-kpi-row">
+          <div class="vib-kpi red"><div class="lbl">🔴 Crítico</div><div class="val" id="vib-k-critico">—</div></div>
+          <div class="vib-kpi yellow"><div class="lbl">🟡 Alerta</div><div class="val" id="vib-k-alerta">—</div></div>
+          <div class="vib-kpi orange"><div class="lbl">🟠 Inicio Falla</div><div class="val" id="vib-k-inicio">—</div></div>
+          <div class="vib-kpi green"><div class="lbl">🟢 OK</div><div class="val" id="vib-k-ok">—</div></div>
+        </div>
+        <div class="vib-g2">
+          <div class="vib-card" style="margin-bottom:0"><h3>🏆 Ranking — Aceleración Máxima</h3><div class="rank-list" id="vib-ranking"></div></div>
+          <div class="vib-card" style="margin-bottom:0"><h3>📊 Distribución</h3><canvas id="vib-ch-estado" style="max-height:200px"></canvas></div>
+        </div>
+        <div style="margin-top:12px">
+          <div class="vib-card" style="margin-bottom:10px">
+            <h3 id="vib-grid-title">⚠️ Bombas que Requieren Atención</h3>
+            <div id="vib-bombas-grid" class="bombas-grid"></div>
+          </div>
+          <div class="vib-card" style="margin-bottom:0">
+            <h3>🌊 Velocidad Crítica &gt;10 mm/s</h3>
+            <div id="vib-bombas-veloc" class="bombas-grid"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Ficha -->
+      <div class="vib-view" id="vib-page-ficha">
+        <div id="vib-fbar-ficha" style="margin-bottom:16px">
+          <div class="filter-bar">
+            <label style="font-size:11px;color:var(--text3);font-weight:600">Bomba:</label>
+            <select id="vib-fi-bomba" onchange="vibOnBombaChange()" style="min-width:150px"><option value="">— Seleccioná —</option></select>
+            <label style="font-size:11px;color:var(--text3);font-weight:600">Fecha:</label>
+            <select id="vib-fi-fecha" onchange="vibRenderFicha()"><option value="">— Seleccioná —</option></select>
+            <label style="font-size:11px;color:var(--text3);font-weight:600">Variable:</label>
+            <select id="vib-fi-var" onchange="vibRenderFicha()">
+              <option value="ALL">Todas</option>
+              <option value="Acel">Aceleración</option>
+              <option value="Veloc">Velocidad</option>
+            </select>
+          </div>
+        </div>
+        <div id="vib-ficha-content"><div class="no-data">Seleccioná una bomba en el filtro.</div></div>
+      </div>
+
+      <!-- Carga -->
+      <div class="vib-view" id="vib-page-carga">
+        <div class="vib-carga-wrap">
+          <div class="vib-carga-top">
+            <div class="vib-carga-field"><label>Equipo</label><select id="vib-c-bomba" style="min-width:160px"><option value="">— Seleccioná —</option></select></div>
+            <div class="vib-carga-field">
+              <label>Fecha</label>
+              <div style="display:flex;gap:6px">
+                <select id="vib-c-dia"></select>
+                <select id="vib-c-mes"><option value="01">Ene</option><option value="02">Feb</option><option value="03">Mar</option><option value="04">Abr</option><option value="05">May</option><option value="06">Jun</option><option value="07">Jul</option><option value="08">Ago</option><option value="09">Sep</option><option value="10">Oct</option><option value="11">Nov</option><option value="12">Dic</option></select>
+                <select id="vib-c-anio"><option value="2024">2024</option><option value="2025">2025</option><option value="2026" selected>2026</option></select>
+              </div>
+            </div>
+            <div class="vib-carga-field"><label>Operador</label><input type="text" id="vib-c-operador" placeholder="Nombre operador" style="min-width:160px"></div>
+            <div class="vib-carga-field"><label>Veloc. Bomba (%)</label><input type="number" id="vib-c-veloc-bomba" min="0" max="100" placeholder="0-100" style="width:90px"></div>
+            <div style="margin-left:auto;display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+              <span id="vib-carga-msg" style="font-size:12px"></span>
+              <button class="btn-accion" style="background:var(--surface2);color:var(--text3);border:1px solid var(--border2)" onclick="vibLimpiarCarga()">🗑 Limpiar</button>
+              <button class="btn-accion guardar" onclick="vibGuardarCarga()">💾 Guardar</button>
+            </div>
+          </div>
+          <div style="font-size:12px;color:var(--text3);margin-bottom:12px">Hacé clic en cada punto — <span id="vib-c-counter" style="font-weight:700;color:var(--blue)">0/22 cargados</span></div>
+          <div style="display:grid;grid-template-columns:1fr 1.5fr 1fr 0.8fr;gap:10px;margin-bottom:10px;align-items:start">
+            <div class="vib-zona-c"><div class="vib-zona-c-title">MOTOR</div><div class="vib-zona-tipo">Acel (g)</div><div class="vib-puntos-row" id="vib-sup-motor-acel"></div><div class="vib-zona-tipo">Veloc (mm/s)</div><div class="vib-puntos-row" id="vib-sup-motor-veloc"></div></div>
+            <div></div>
+            <div class="vib-zona-c"><div class="vib-zona-c-title">BOMBA</div><div class="vib-zona-tipo">Acel (g)</div><div class="vib-puntos-row" id="vib-sup-bomba-acel"></div><div class="vib-zona-tipo">Veloc (mm/s)</div><div class="vib-puntos-row" id="vib-sup-bomba-veloc"></div></div>
+            <div></div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr 0.8fr;gap:10px;align-items:start">
+            <div class="vib-zona-c"><div class="vib-zona-c-title">MOTOR</div><div class="vib-zona-tipo">Acel</div><div class="vib-puntos-row" id="vib-inf-motor-acel"></div><div class="vib-zona-tipo">Veloc</div><div class="vib-puntos-row" id="vib-inf-motor-veloc"></div></div>
+            <div class="vib-zona-c"><div class="vib-zona-c-title">AXIAL</div><div class="vib-zona-tipo">Acel</div><div class="vib-puntos-row" id="vib-inf-axial-acel"></div><div class="vib-zona-tipo">Veloc</div><div class="vib-puntos-row" id="vib-inf-axial-veloc"></div></div>
+            <div class="vib-zona-c"><div class="vib-zona-c-title">BOMBA</div><div class="vib-zona-tipo">Acel</div><div class="vib-puntos-row" id="vib-inf-bomba-acel"></div><div class="vib-zona-tipo">Veloc</div><div class="vib-puntos-row" id="vib-inf-bomba-veloc"></div></div>
+            <div class="vib-zona-c"><div class="vib-zona-c-title">VOLUTA</div><div class="vib-zona-tipo">Acel</div><div class="vib-puntos-row" id="vib-inf-voluta-acel"></div><div class="vib-zona-tipo">Veloc</div><div class="vib-puntos-row" id="vib-inf-voluta-veloc"></div></div>
+          </div>
+        </div>
+      </div>
+    </div><!-- /mod-vib -->
+
+    <!-- VIB POPUP -->
+    <div class="vib-overlay" id="vib-overlay" onclick="vibCerrarPopup()"></div>
+    <div class="vib-popup" id="vib-popup">
+      <div style="font-size:12px;color:var(--text3);margin-bottom:2px;font-weight:600;text-transform:uppercase;letter-spacing:.5px" id="vib-vp-titulo">—</div>
+      <div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:12px" id="vib-vp-tipo">—</div>
+      <input type="number" class="vp-inp" id="vib-vp-input" step="0.01" min="0" placeholder="0.00" onkeydown="if(event.key==='Enter')vibConfirmarValor()">
+      <div style="display:flex;gap:8px;justify-content:center">
+        <button style="background:var(--surface2);border:1px solid var(--border2);color:var(--text3);padding:8px 14px;border-radius:var(--radius-sm);cursor:pointer;font-size:13px;font-family:inherit" onclick="vibCerrarPopup()">Cancelar</button>
+        <button style="background:var(--accent);border:none;color:#fff;padding:8px 20px;border-radius:var(--radius-sm);cursor:pointer;font-weight:700;font-size:13px;font-family:inherit" onclick="vibConfirmarValor()">✓ OK</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- PRINT FRAME -->
+<div id="print-frame-wrap" style="display:none"><iframe id="print-iframe" style="width:0;height:0;border:0;position:fixed;top:-9999px"></iframe></div>
+
+<div id="inc-print-wrap" style="display:none"></div>
+
+<script>
+
+
+var LOGO_EXPLORA="data:image/png;base64,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";
+
+function fmtFecha(f){if(!f)return "-";var s=String(f).trim();if(s.length<=10)return s;try{var dt=new Date(s);if(!isNaN(dt))return dt.getDate().toString().padStart(2,"0")+"/"+(dt.getMonth()+1).toString().padStart(2,"0")+"/"+dt.getFullYear();}catch(e){}return s;}
+var URL_MEC='https://script.google.com/macros/s/AKfycby5So_nECYJTCAynBNMCsA2_xAixgY3qGJ04HhUBmvs4J82U3DbOidr8RNLRYe6F032cA/exec';
+var autoData=null,compData=null,genData=null,incData=null,taahData=null;
+
+var AUTO_ITEMS=[
+  {key:'NIVEL_AGUA',              label:'Control nivel agua de refrigeración'},
+  {key:'NIVEL_ACEITE_MOTOR',      label:'Control nivel aceite motor'},
+  {key:'NIVEL_ACEITE_HIDRAULICO', label:'Control nivel aceite hidráulico'},
+  {key:'FILTROS_AIRE',            label:'Inspección filtros de aire y limpieza'},
+  {key:'PERDIDAS',                label:'Control de pérdidas (hidráulico, mangueras, conexiones)'},
+  {key:'TABLERO_ALARMAS',         label:'Tablero, alarmas, luces, bocina'},
+  {key:'FIJACION_BRAZOS',         label:'Fijación brazos / horquilla / uñas'},
+  {key:'RUEDAS',                  label:'Ruedas (banda de rodaje, presión, desgaste)'},
+  {key:'CONTROL_MOVIMIENTO',      label:'Control movimiento (mandos en servicio)'},
+  {key:'CONTROL_FRENOS',          label:'Control de frenos de pie y mano'},
+  {key:'CONTROL_ESPEJOS',         label:'Control de espejos'},
+  {key:'EXTINTOR_CINTURON',       label:'Extintor / cinturón de seguridad / asiento'},
+  {key:'NORMAL_FUNC_TRANSMISION', label:'Normal funcionamiento del sistema de transmisión'},
+  {key:'ENGRASE_ROTULAS',         label:'Engrase de rótulas y brazos'},
+  {key:'LUBRICACION_CADENAS',     label:'Lubricación de cadenas'}
+];
+var COMP_ITEMS=[
+  {key:'NIVEL_ACEITE',label:'Nivel de aceite'},
+  {key:'HORAS_FUNC',label:'Horas de funcionamiento'},
+  {key:'TEMPERATURA_MAX',label:'Temperatura máxima'},
+  {key:'ESTADO_CORREAS',label:'Visual estado de correas'},
+  {key:'LIMPIEZA_RADIADORES',label:'Limpieza de radiadores (aceite y aire)'},
+  {key:'LIMPIEZA_FILTRO',label:'Limpieza filtro de aire'},
+  {key:'PERDIDAS_ACEITE',label:'Pérdidas de aceite (conexiones y mangueras)'},
+  {key:'LIMPIEZA_GENERAL',label:'Estado general de limpieza'}
+];
+var GEN_ITEMS=[
+  {key:'NIVEL_ACEITE',label:'Nivel de aceite'},
+  {key:'NIVEL_REFRIGERANTE',label:'Nivel de refrigerante'},
+  {key:'TENSION_BATERIAS',label:'Tensión baterías en uso'},
+  {key:'TEMP_CALENTAMIENTO',label:'Temperatura de calentamiento'},
+  {key:'HORAS_FUNC',label:'Horas de funcionamiento'},
+  {key:'ESTADO_CORREAS',label:'Visual estado de correas'},
+  {key:'ESTADO_RADIADOR',label:'Visual estado de radiador'},
+  {key:'FILTROS_AIRE',label:'Estado filtros de aire'},
+  {key:'PERDIDAS_ACEITE',label:'Pérdidas de aceite'},
+  {key:'PERDIDAS_REFRIGERANTE',label:'Pérdidas de refrigerante'},
+  {key:'PERDIDAS_COMBUSTIBLE',label:'Pérdidas de combustible'},
+  {key:'KWH',label:'KWh'},
+  {key:'LIMPIEZA_GENERAL',label:'Estado general de limpieza'}
+];
+var INC_AREAS=['Área 10','Área 20-30','Área 31-40-50','Área 65'];
+var INC_ITEMS=[
+  {key:'SISTEMA_OK',label:'¿El sistema funciona correctamente?'},
+  {key:'SPRINKLER_DESTAPADOS',label:'¿Todos los sprinkler destapados?'},
+  {key:'ALARMA_OK',label:'¿La alarma funcionó correctamente?'},
+  {key:'SPRINKLER_REPUESTOS',label:'¿Se destaparon los sprinkler tapados?'},
+  {key:'SISTEMA_REPUESTO',label:'¿Se repuso el sistema?'}
+];
+var TAAH_TANQUES=['TXX-630101','TXX-630102','TXX-630201','TXX-790101','TXX-790301','TXX-620202','TXX-620203'];
+var TAAH_SECCIONES={
+  'PISO':[
+    {key:'piso_deformaciones_union',label:'¿Deformaciones en unión piso/envolvente?'},
+    {key:'piso_corrosion_union',label:'¿Corrosión en unión piso/envolvente?'},
+    {key:'piso_base_cemento',label:'¿Base de cemento en buen estado?'}
+  ],
+  'ENVOLVENTE':[
+    {key:'env_pintura',label:'Estado de la pintura de la envolvente'},
+    {key:'env_corrosion',label:'¿Se observa corrosión en la envolvente?'},
+    {key:'env_deformaciones',label:'¿Se observan deformaciones en la envolvente?'},
+    {key:'env_chapa_identificatoria',label:'¿Posee chapa identificatoria (Res. SE 277/25)?'},
+    {key:'env_puesta_tierra',label:'¿Posee todas las puestas a tierra?'}
+  ],
+  'TECHO FIJO':[
+    {key:'techo_deformaciones',label:'¿Presenta deformaciones?'},
+    {key:'techo_deform_union',label:'¿Deformaciones en unión techo/envolvente?'},
+    {key:'techo_acumulacion_agua',label:'¿Acumulación de agua en zonas deformadas?'},
+    {key:'techo_rotura',label:'¿Presenta rotura?'},
+    {key:'techo_sup_roturas',label:'Superficie total con roturas'},
+    {key:'techo_valvulas_pyv',label:'¿Válv. PyV / arrestallamas operativas?'},
+    {key:'techo_escalera',label:'Estado escalera de acceso al techo'},
+    {key:'techo_pintura',label:'Estado pintura del techo'},
+    {key:'techo_barandas',label:'Estado barandas perimetrales'}
+  ],
+  'CONEXIONES':[
+    {key:'con_valvulas_identificadas',label:'¿Válvulas correctamente identificadas?'},
+    {key:'con_valvulas_operatividad',label:'¿Válvulas con deficiencias en operatividad?'},
+    {key:'con_esparragos',label:'¿Espárragos de uniones bridadas sobresalen 1,5mm? (ASME B16.5)'},
+    {key:'con_pintura_conexiones',label:'Estado pintura de conexiones'}
+  ],
+  'LUCHA CONTRA INCENDIOS':[
+    {key:'inc_espumigeno',label:'Estado instalación de espumígeno del TK'},
+    {key:'inc_monitores',label:'¿Monitores aledaños al TK operativos?'}
+  ]
+};
+
+// ── UTILS ──
+function apiFetch(p){var url=URL_MEC+'?'+Object.keys(p).map(function(k){return k+'='+encodeURIComponent(p[k]);}).join('&');return fetch(url).then(function(r){return r.json();});}
+function apiPost(b){return fetch(URL_MEC,{method:'POST',body:JSON.stringify(b)}).then(function(r){return r.json();});}
+function setFecha(id){var h=new Date();var el=document.getElementById(id);if(el)el.value=h.getFullYear()+'-'+String(h.getMonth()+1).padStart(2,'0')+'-'+String(h.getDate()).padStart(2,'0');}
+function badge(v){var u=String(v||'').trim().toUpperCase();if(u==='OK')return'<span class="badge-ok">OK</span>';if(u==='MAL')return'<span class="badge-mal">MAL</span>';if(u==='SI')return'<span class="badge-si">SI</span>';if(u==='NO')return'<span class="badge-no">NO</span>';if(!u||u==='—')return'<span class="badge-nd">—</span>';return'<span style="font-size:12px;color:var(--text2)">'+v+'</span>';}
+function switchModule(mod){document.querySelectorAll('.module').forEach(function(m){m.classList.remove('active');});document.querySelectorAll('.nav-item').forEach(function(n){n.classList.remove('active');});document.getElementById('mod-'+mod).classList.add('active');document.getElementById('mbtn-'+mod).classList.add('active');if(mod==='auto'&&!autoData)autoLoad();if(mod==='comp'&&!compData)compLoad();if(mod==='gen'&&!genData)genLoad();if(mod==='inc'&&!incData)incLoad();if(mod==='taah'&&!taahData)taahLoad();if(mod==='vib'&&!vibLoaded)vibLoadData();}
+function switchTab(mod,tab,el){document.querySelectorAll('#mod-'+mod+' .itab').forEach(function(t){t.classList.remove('active');});if(el)el.classList.add('active');document.querySelectorAll('#mod-'+mod+' .iview').forEach(function(v){v.classList.remove('active');});document.getElementById(mod+'-view-'+tab).classList.add('active');}
+
+// ══ AUTOELEVADOR ══
+function autoTab(t,el){switchTab('auto',t,el);}
+function autoLoad(){apiFetch({modulo:'autoelevador',action:'lista'}).then(function(d){autoData=d;autoRenderGeneral();autoRenderHistorial();}).catch(function(e){document.getElementById('auto-general-content').innerHTML='<p class="error-msg">❌ '+e.message+'</p>';});}
+function autoRenderGeneral(){
+  if(!autoData||!autoData.ok)return;
+  var regs=autoData.registros||[];
+  document.getElementById('auto-m-total').textContent=regs.length;
+  if(!regs.length){document.getElementById('auto-general-content').innerHTML='<p class="no-data">Sin registros cargados aún.</p>';return;}
+  var u=regs[0];
+  document.getElementById('auto-m-fecha').textContent=fmtFecha(u.FECHA);
+  document.getElementById('auto-m-horas').textContent=u.HORAS_USO||'—';
+  var hayMal=AUTO_ITEMS.some(function(it){return String(u[it.key]||'').toUpperCase()==='MAL';});
+  document.getElementById('auto-m-estado').textContent=hayMal?'⚠️ Con problemas':'✅ OK';
+  document.getElementById('auto-m-estado').style.color=hayMal?'var(--red)':'var(--green)';
+  var h='<div style="margin-bottom:8px;font-size:12px;color:var(--text3)"><strong>Realizó:</strong> '+(u.REALIZO||'—')+' &nbsp; <strong>OT:</strong> '+(u.OT||'—')+'</div>';
+  h+='<table><thead><tr><th>Ítem</th><th>Estado</th></tr></thead><tbody>';
+  AUTO_ITEMS.forEach(function(it){h+='<tr><td style="white-space:normal">'+it.label+'</td><td>'+badge(u[it.key])+'</td></tr>';});
+  if(u.OBSERVACIONES)h+='<tr><td colspan="2" style="color:var(--text3);font-size:11px">📝 '+u.OBSERVACIONES+'</td></tr>';
+  document.getElementById('auto-general-content').innerHTML=h+'</tbody></table>';
+}
+function autoRenderHistorial(){
+  if(!autoData||!autoData.ok)return;
+  var regs=autoData.registros||[];
+  var filtro=document.getElementById('auto-h-filtro')?document.getElementById('auto-h-filtro').value:'';
+  if(filtro==='mal')regs=regs.filter(function(r){return AUTO_ITEMS.some(function(it){return String(r[it.key]||'').toUpperCase()==='MAL';});});
+  if(!regs.length){document.getElementById('auto-historial-content').innerHTML='<p class="no-data">Sin registros.</p>';return;}
+  window.autoHistData=regs;
+  var h='<table><thead><tr><th>Fecha</th><th>Horas</th>';
+  AUTO_ITEMS.forEach(function(it){h+='<th>'+it.label.split(' ').slice(0,3).join(' ')+'</th>';});
+  h+='<th>Realizó</th><th>OT</th><th>Acciones</th></tr></thead><tbody>';
+  regs.forEach(function(r,idx){h+='<tr><td class="tag-cell">'+fmtFecha(r.FECHA)+'</td><td>'+r.HORAS_USO+'</td>';AUTO_ITEMS.forEach(function(it){h+='<td>'+badge(r[it.key])+'</td>';});
+  h+='<td>'+r.REALIZO+'</td><td>'+r.OT+'</td>';
+  h+='<td style="white-space:nowrap"><button onclick="autoPDF(autoHistData['+idx+'])" style="background:var(--red-light);color:var(--red);border:1px solid #fecaca;border-radius:4px;padding:3px 8px;font-size:11px;cursor:pointer;font-family:inherit;margin-right:3px">🖨 PDF</button>';
+  h+='<button onclick="autoExcel(autoHistData['+idx+'])" style="background:var(--green-light);color:var(--green);border:1px solid #bbf7d0;border-radius:4px;padding:3px 8px;font-size:11px;cursor:pointer;font-family:inherit">📊 Excel</button></td></tr>';});
+  document.getElementById('auto-historial-content').innerHTML=h+'</tbody></table>';
+}
+function autoInitCarga(){
+  setFecha('auto-c-fecha');
+  var opts=['','OK','MAL','N/A'].map(function(v){return'<option value="'+v+'">'+(v||'--')+'</option>';}).join('');
+  document.getElementById('auto-c-tbody').innerHTML=AUTO_ITEMS.map(function(it,i){return'<tr><td style="white-space:normal">'+it.label+'</td><td><select id="auto_est_'+i+'" onchange="colorSel(this)">'+opts+'</select></td><td><input type="text" id="auto_obs_'+i+'" placeholder="..."></td></tr>';}).join('');
+}
+function colorSel(s){var v=s.value.toUpperCase();s.style.background=v==='OK'?'var(--green-light)':v==='MAL'?'var(--red-light)':'';s.style.color=v==='OK'?'var(--green)':v==='MAL'?'var(--red)':'';s.style.borderColor=v==='OK'?'#86efac':v==='MAL'?'#fca5a5':'';}
+function autoGuardar(){
+  var fecha=document.getElementById('auto-c-fecha').value,horas=document.getElementById('auto-c-horas').value.trim(),realizo=document.getElementById('auto-c-realizo').value.trim(),ot=document.getElementById('auto-c-ot').value.trim(),msg=document.getElementById('auto-c-msg');
+  if(!fecha||!realizo){msg.className='msg-err';msg.textContent='Completá fecha y realizó';return;}
+  var body={modulo:'autoelevador',fecha:fecha,HORAS_USO:horas,REALIZO:realizo,OT:ot,OBSERVACIONES:document.getElementById('auto-c-obs').value.trim()};
+  AUTO_ITEMS.forEach(function(it,i){body[it.key]=document.getElementById('auto_est_'+i).value;});
+  msg.className='msg-ok';msg.textContent='Guardando...';
+  apiPost(body).then(function(d){if(d.ok){msg.textContent='✅ Guardado correctamente';autoData=null;autoLoad();}else{msg.className='msg-err';msg.textContent='❌ '+(d.error||'Error');}}).catch(function(){msg.className='msg-err';msg.textContent='❌ Error de conexión';});
+}
+
+// ══ COMPRESORES ══
+function compTab(t,el){switchTab('comp',t,el);if(t==='historial')compCargarHistorial();}
+function compLoad(){apiFetch({modulo:'compresores',action:'ultimo'}).then(function(d){compData=d;compRenderGeneral();}).catch(function(e){document.getElementById('comp-general-content').innerHTML='<p class="error-msg">❌ '+e.message+'</p>';});}
+function compRenderGeneral(){
+  if(!compData||!compData.ok){document.getElementById('comp-general-content').innerHTML='<p class="error-msg">Sin datos</p>';return;}
+  var ultimos=compData.ultimos||{};
+  var h='<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">';
+  ['COM-780102','COM-780104'].forEach(function(eq){
+    var r=ultimos[eq];
+    var hayMal=r&&COMP_ITEMS.some(function(it){return String(r[it.key]||'').toUpperCase()==='MAL';});
+    h+='<div class="section-box"><div class="section-header"><span style="color:var(--mod-accent)">💨 '+eq+'</span>'+(r?'<span style="font-size:11px;color:var(--text4)">'+r.FECHA+'</span>':'')+'</div><div style="padding:14px">';
+    if(!r){h+='<p class="no-data" style="padding:20px">Sin registros cargados.</p>';}
+    else{
+      h+='<div style="margin-bottom:8px;font-size:12px;color:var(--text3)"><strong>Realizó:</strong> '+(r.REALIZO||'—')+'</div>';
+      h+='<table><thead><tr><th>Ítem</th><th>Estado / Valor</th></tr></thead><tbody>';
+      COMP_ITEMS.forEach(function(it){h+='<tr><td>'+it.label+'</td><td>'+badge(r[it.key])+'</td></tr>';});
+      h+='</tbody></table>';
+    }
+    h+='</div></div>';
+  });
+  document.getElementById('comp-general-content').innerHTML=h+'</div>';
+}
+function compCargarHistorial(){
+  var eq=document.getElementById('comp-h-equipo').value;
+  document.getElementById('comp-historial-content').innerHTML='<p class="loading">Cargando...</p>';
+  apiFetch({modulo:'compresores',action:'historial',compresor:eq}).then(function(d){
+    if(!d.ok||!d.registros.length){document.getElementById('comp-historial-content').innerHTML='<p class="no-data">Sin registros para '+eq+'</p>';return;}
+    window.compHistData=d.registros;
+    var h='<table><thead><tr><th>Fecha</th>';COMP_ITEMS.forEach(function(it){h+='<th>'+it.label.split(' ').slice(0,3).join(' ')+'</th>';});h+='<th>Realizó</th><th>OT</th><th>Acciones</th></tr></thead><tbody>';
+    d.registros.forEach(function(r,idx){h+='<tr><td class="tag-cell">'+fmtFecha(r.FECHA)+'</td>';COMP_ITEMS.forEach(function(it){h+='<td>'+badge(r[it.key])+'</td>';});
+    h+='<td>'+r.REALIZO+'</td><td>'+r.OT+'</td>';
+    h+='<td style="white-space:nowrap"><button onclick="compPDF(compHistData['+idx+'])" style="background:var(--red-light);color:var(--red);border:1px solid #fecaca;border-radius:4px;padding:3px 8px;font-size:11px;cursor:pointer;font-family:inherit;margin-right:3px">🖨 PDF</button>';
+    h+='<button onclick="compExcel(compHistData['+idx+'])" style="background:var(--green-light);color:var(--green);border:1px solid #bbf7d0;border-radius:4px;padding:3px 8px;font-size:11px;cursor:pointer;font-family:inherit">📊 Excel</button></td></tr>';});
+    document.getElementById('comp-historial-content').innerHTML=h+'</tbody></table>';
+  }).catch(function(e){document.getElementById('comp-historial-content').innerHTML='<p class="error-msg">❌ '+e.message+'</p>';});
+}
+function compInitCarga(){
+  setFecha('comp-c-fecha');
+  ['102','104'].forEach(function(cod){
+    document.getElementById('comp-c-tbody-'+cod).innerHTML=COMP_ITEMS.map(function(it){return'<tr><td>'+it.label+'</td><td><input type="text" id="comp_'+cod+'_'+it.key+'" placeholder="valor..." style="width:130px"></td></tr>';}).join('');
+  });
+}
+function compGuardar(){
+  var fecha=document.getElementById('comp-c-fecha').value,realizo=document.getElementById('comp-c-realizo').value.trim(),ot=document.getElementById('comp-c-ot').value.trim(),msg=document.getElementById('comp-c-msg');
+  if(!fecha||!realizo){msg.className='msg-err';msg.textContent='Completá fecha y realizó';return;}
+  var compresores=[{eq:'COM-780102',cod:'102'},{eq:'COM-780104',cod:'104'}].map(function(x){
+    var obj={COMPRESOR:x.eq,OBSERVACIONES:document.getElementById('comp-c-obs-'+x.cod).value.trim()};
+    COMP_ITEMS.forEach(function(it){var el=document.getElementById('comp_'+x.cod+'_'+it.key);obj[it.key]=el?el.value.trim():'';});
+    return obj;
+  });
+  msg.className='msg-ok';msg.textContent='Guardando...';
+  apiPost({modulo:'compresores',fecha:fecha,realizo:realizo,ot:ot,compresores:compresores}).then(function(d){if(d.ok){msg.textContent='✅ Guardado correctamente';compData=null;compLoad();}else{msg.className='msg-err';msg.textContent='❌ '+(d.error||'Error');}}).catch(function(){msg.className='msg-err';msg.textContent='❌ Error de conexión';});
+}
+
+// ══ GENERADOR ══
+function genTab(t,el){switchTab('gen',t,el);}
+function genLoad(){apiFetch({modulo:'generador',action:'lista'}).then(function(d){genData=d;genRenderGeneral();genRenderHistorial();}).catch(function(e){document.getElementById('gen-general-content').innerHTML='<p class="error-msg">❌ '+e.message+'</p>';});}
+function genRenderGeneral(){
+  if(!genData||!genData.ok)return;
+  var regs=genData.registros||[];
+  if(!regs.length){document.getElementById('gen-general-content').innerHTML='<p class="no-data">Sin registros cargados aún.</p>';return;}
+  var u=regs[0];
+  document.getElementById('gen-m-fecha').textContent=fmtFecha(u.FECHA);
+  document.getElementById('gen-m-horas').textContent=u.HORAS_FUNC||'—';
+  document.getElementById('gen-m-tension').textContent=u.TENSION_BATERIAS||'—';
+  document.getElementById('gen-m-kwh').textContent=u.KWH||'—';
+  var h='<div style="margin-bottom:8px;font-size:12px;color:var(--text3)"><strong>Operador:</strong> '+(u.OPERADOR||'—')+' &nbsp; <strong>OT:</strong> '+(u.OT||'—')+'</div>';
+  h+='<table><thead><tr><th>Ítem</th><th>Estado / Valor</th></tr></thead><tbody>';
+  GEN_ITEMS.forEach(function(it){h+='<tr><td>'+it.label+'</td><td>'+badge(u[it.key])+'</td></tr>';});
+  if(u.OBSERVACIONES)h+='<tr><td colspan="2" style="color:var(--text3);font-size:11px">📝 '+u.OBSERVACIONES+'</td></tr>';
+  document.getElementById('gen-general-content').innerHTML=h+'</tbody></table>';
+}
+function genRenderHistorial(){
+  if(!genData||!genData.ok)return;
+  var regs=genData.registros||[];
+  if(!regs.length){document.getElementById('gen-historial-content').innerHTML='<p class="no-data">Sin registros.</p>';return;}
+  window.genHistData=regs;
+  var h='<table><thead><tr><th>Fecha</th><th>Operador</th>';
+  GEN_ITEMS.forEach(function(it){h+='<th>'+it.label.split(' ').slice(0,2).join(' ')+'</th>';});
+  h+='<th>KWh</th><th>OT</th><th>Acciones</th></tr></thead><tbody>';
+  regs.forEach(function(r,idx){h+='<tr><td class="tag-cell">'+fmtFecha(r.FECHA)+'</td><td>'+r.OPERADOR+'</td>';GEN_ITEMS.forEach(function(it){h+='<td>'+badge(r[it.key])+'</td>';});
+  h+='<td>'+r.KWH+'</td><td>'+r.OT+'</td>';
+  h+='<td style="white-space:nowrap"><button onclick="genPDF(genHistData['+idx+'])" style="background:var(--red-light);color:var(--red);border:1px solid #fecaca;border-radius:4px;padding:3px 8px;font-size:11px;cursor:pointer;font-family:inherit;margin-right:3px">🖨 PDF</button>';
+  h+='<button onclick="genExcel(genHistData['+idx+'])" style="background:var(--green-light);color:var(--green);border:1px solid #bbf7d0;border-radius:4px;padding:3px 8px;font-size:11px;cursor:pointer;font-family:inherit">📊 Excel</button></td></tr>';});
+  document.getElementById('gen-historial-content').innerHTML=h+'</tbody></table>';
+}
+function genInitCarga(){
+  setFecha('gen-c-fecha');
+  document.getElementById('gen-c-tbody').innerHTML=GEN_ITEMS.map(function(it,i){return'<tr><td>'+it.label+'</td><td><input type="text" id="gen_'+it.key+'" placeholder="valor..."></td><td><input type="text" id="gen_obs_'+i+'" placeholder="..."></td></tr>';}).join('');
+}
+function genGuardar(){
+  var fecha=document.getElementById('gen-c-fecha').value,operador=document.getElementById('gen-c-operador').value.trim(),ot=document.getElementById('gen-c-ot').value.trim(),msg=document.getElementById('gen-c-msg');
+  if(!fecha||!operador){msg.className='msg-err';msg.textContent='Completá fecha y operador';return;}
+  var body={modulo:'generador',fecha:fecha,operador:operador,ot:ot,OBSERVACIONES:document.getElementById('gen-c-obs').value.trim()};
+  GEN_ITEMS.forEach(function(it){body[it.key]=document.getElementById('gen_'+it.key)?document.getElementById('gen_'+it.key).value.trim():'';});
+  msg.className='msg-ok';msg.textContent='Guardando...';
+  apiPost(body).then(function(d){if(d.ok){msg.textContent='✅ Guardado correctamente';genData=null;genLoad();}else{msg.className='msg-err';msg.textContent='❌ '+(d.error||'Error');}}).catch(function(){msg.className='msg-err';msg.textContent='❌ Error de conexión';});
+}
+
+// ══ INCENDIO ══
+function incTab(t,el){switchTab('inc',t,el);if(t==='historial')incCargarHistorial();}
+function incLoad(){apiFetch({modulo:'incendio',action:'ultimo'}).then(function(d){incData=d;incRenderGeneral();}).catch(function(e){document.getElementById('inc-general-content').innerHTML='<p class="error-msg">❌ '+e.message+'</p>';});}
+function incRenderGeneral(){
+  if(!incData||!incData.ok){document.getElementById('inc-general-content').innerHTML='<p class="error-msg">Sin datos</p>';return;}
+  var ultimos=incData.ultimos||{};
+  var h='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px">';
+  INC_AREAS.forEach(function(area){
+    var r=ultimos[area];
+    var hayNo=r&&INC_ITEMS.some(function(it){return String(r[it.key]||'').toUpperCase()==='NO';});
+    h+='<div class="section-box"><div class="section-header"><span style="color:var(--mod-accent)">🔥 '+area+'</span>'+(r?'<span style="font-size:11px;color:var(--text4)">'+incFmtFecha(r.FECHA)+'</span>':'')+'</div><div style="padding:14px">';
+    if(!r){h+='<p class="no-data" style="padding:16px">Sin registros.</p>';}
+    else{
+      h+='<div style="margin-bottom:8px;font-size:12px;color:var(--text3)"><strong>Realizó:</strong> '+(r.REALIZO||'—')+'</div>';
+      h+='<table><thead><tr><th>Verificación</th><th>Resultado</th></tr></thead><tbody>';
+      INC_ITEMS.forEach(function(it){h+='<tr><td style="white-space:normal;font-size:11px">'+it.label+'</td><td>'+badge(r[it.key])+'</td></tr>';});
+      if(r.OBSERVACIONES)h+='<tr><td colspan="2" style="color:var(--text3);font-size:11px">📝 '+r.OBSERVACIONES+'</td></tr>';
+      h+='</tbody></table>';
+    }
+    h+='</div></div>';
+  });
+  document.getElementById('inc-general-content').innerHTML=h+'</div>';
+}
+
+function incInitCarga(){
+  setFecha('inc-c-fecha');
+  document.getElementById('inc-c-container').innerHTML=INC_AREAS.map(function(area){
+    var aId=area.replace(/[^a-zA-Z0-9]/g,'_');
+    var rows=INC_ITEMS.map(function(it){
+      return'<tr><td style="white-space:normal;font-size:12px">'+it.label+'</td>'+
+        '<td><div class="check-group">'+
+        ['SI','NO'].map(function(v){return'<button class="check-btn '+v+'" onclick="incToggle(this,\''+aId+'_'+it.key+'\',\''+v+'\')">'+v+'</button>';}).join('')+
+        '<input type="hidden" id="inc_'+aId+'_'+it.key+'" value=""></div></td>'+
+        '<td><input type="text" id="inc_obs_'+aId+'_'+it.key+'" placeholder="..." style="width:120px"></td></tr>';
+    }).join('');
+    return'<div class="taah-sec-hdr">🔥 '+area+'</div>'+
+      '<table class="carga-table"><thead><tr><th>Verificación</th><th>Resultado</th><th>Obs.</th></tr></thead><tbody>'+rows+'</tbody></table>'+
+      '<div class="form-field" style="margin-bottom:12px"><label>Observaciones del área</label><textarea id="inc_obs_gen_'+aId+'" rows="1" style="width:100%"></textarea></div>';
+  }).join('');
+}
+function incToggle(btn,fId,val){btn.parentElement.querySelectorAll('.check-btn').forEach(function(b){b.classList.remove('sel');});btn.classList.add('sel');document.getElementById('inc_'+fId).value=val;}
+function incGuardar(){
+  var fecha=document.getElementById('inc-c-fecha').value,realizo=document.getElementById('inc-c-realizo').value.trim(),ot=document.getElementById('inc-c-ot').value.trim(),msg=document.getElementById('inc-c-msg');
+  if(!fecha||!realizo){msg.className='msg-err';msg.textContent='Completá fecha y realizó';return;}
+  var areas=INC_AREAS.map(function(area){
+    var aId=area.replace(/[^a-zA-Z0-9]/g,'_');
+    var obj={AREA:area,OBSERVACIONES:document.getElementById('inc_obs_gen_'+aId)?document.getElementById('inc_obs_gen_'+aId).value.trim():''};
+    INC_ITEMS.forEach(function(it){var el=document.getElementById('inc_'+aId+'_'+it.key);obj[it.key]=el?el.value:'';});
+    return obj;
+  });
+  msg.className='msg-ok';msg.textContent='Guardando...';
+  apiPost({modulo:'incendio',fecha:fecha,realizo:realizo,ot:ot,areas:areas}).then(function(d){if(d.ok){msg.textContent='✅ Guardado correctamente';incData=null;incLoad();}else{msg.className='msg-err';msg.textContent='❌ '+(d.error||'Error');}}).catch(function(){msg.className='msg-err';msg.textContent='❌ Error de conexión';});
+}
+
+// ══ TAAH ══
+function taahTab(t,el){switchTab('taah',t,el);if(t==='ficha')taahCargarFicha();}
+function taahLoad(){apiFetch({modulo:'taah',action:'ultimo'}).then(function(d){
+  // Formatear fechas en los últimos registros
+  if(d.ok&&d.ultimos){Object.keys(d.ultimos).forEach(function(tk){if(d.ultimos[tk]&&d.ultimos[tk].FECHA)d.ultimos[tk].FECHA=taahFmtFecha(d.ultimos[tk].FECHA);});}
+  taahData=d;taahRenderGeneral();
+}).catch(function(e){document.getElementById('taah-general-content').innerHTML='<p class="error-msg">❌ '+e.message+'</p>';});}
+function taahRenderGeneral(){
+  if(!taahData||!taahData.ok){document.getElementById('taah-general-content').innerHTML='<p class="error-msg">Sin datos</p>';return;}
+  var ultimos=taahData.ultimos||{};
+  var h='<div class="eq-grid">';
+  TAAH_TANQUES.forEach(function(tk){
+    var r=ultimos[tk];
+    var cls='nd',estado='Sin inspecciones',color='var(--text4)';
+    if(r){
+      var allKeys=[];Object.values(TAAH_SECCIONES).forEach(function(s){s.forEach(function(it){allKeys.push(it.key);});});
+      var hayNo=allKeys.some(function(k){return String(r[k]||'').toUpperCase()==='NO';});
+      cls=hayNo?'mal':'ok';estado=hayNo?'⚠️ Con observaciones':'✅ OK';color=hayNo?'var(--red)':'var(--green)';
+    }
+    h+='<div class="eq-card '+cls+'" onclick="taahIrFicha(\''+tk+'\')">';
+    h+='<div class="eq-card-title">🛢️ '+tk+'</div>';
+    h+='<div class="eq-card-fecha">'+(r?'Última: '+taahFmtFecha(r.FECHA):'Sin inspecciones cargadas')+'</div>';
+    h+='<div style="font-size:12px;font-weight:700;color:'+color+'">'+estado+'</div>';
+    if(r)h+='<div style="font-size:11px;color:var(--text3);margin-top:4px">Operador: '+r.OPERADOR+'</div>';
+    h+='</div>';
+  });
+  document.getElementById('taah-general-content').innerHTML=h+'</div>';
+}
+function taahIrFicha(tk){document.getElementById('taah-f-tanque').value=tk;taahTab('ficha',document.querySelectorAll('#mod-taah .itab')[1]);taahCargarFicha();}
+function taahFmtFecha(f){
+  if(!f||f.length<=10)return f||'—';
+  try{var dt=new Date(f);if(!isNaN(dt))return dt.getDate().toString().padStart(2,'0')+'/'+(dt.getMonth()+1).toString().padStart(2,'0')+'/'+dt.getFullYear();}catch(e){}
+  return f;
+}
+
+function taahCargarFicha(){
+  var tk=document.getElementById('taah-f-tanque').value;
+  var cont=document.getElementById('taah-ficha-content');
+  cont.innerHTML='<p class="loading">Cargando...</p>';
+
+  if(!tk){
+    // Usar taahData que ya cargó Vista General
+    if(!taahData||!taahData.ok||!taahData.ultimos){
+      cont.innerHTML='<p class="no-data">Ir primero a Vista General para cargar los datos.</p>';
+      return;
+    }
+    var ultimos=taahData.ultimos;
+    var h='';
+    TAAH_TANQUES.forEach(function(tanque){
+      var r=ultimos[tanque];
+      h+='<div class="ficha-card"><h3>'+tanque+'</h3>';
+      if(!r){
+        h+='<p class="no-data" style="padding:6px 0">Sin inspecciones cargadas</p></div>';
+        return;
+      }
+      h+='<div class="tbl-wrap"><table>';
+      h+='<thead><tr><th>Fecha</th><th>Operador</th><th>OT</th><th>Observaciones</th><th>Acciones</th></tr></thead><tbody>';
+      // Solo hay un registro en ultimos (el último), pero lo mostramos
+      if(!window.taahHistCache)window.taahHistCache={};
+      var ck=tanque.replace(/[^a-zA-Z0-9]/g,'_')+'__0';
+      taahHistCache[ck]=r;
+      h+='<tr>';
+      h+='<td class="tag-cell">'+fmtFecha(r.FECHA)+'</td>';
+      h+='<td>'+(r.OPERADOR||'')+'</td>';
+      h+='<td>'+(r.OT||'')+'</td>';
+      h+='<td class="obs-cell">'+(r.OBSERVACIONES||'')+'</td>';
+      h+='<td style="white-space:nowrap">';
+      h+='<button data-k="'+ck+'" onclick="taahImprimirPDF(taahHistCache[this.dataset.k])" style="background:var(--red-light);color:var(--red);border:1px solid #fecaca;border-radius:4px;padding:3px 8px;font-size:11px;cursor:pointer;font-family:inherit;margin-right:4px">PDF</button>';
+      h+='<button data-k="'+ck+'" onclick="taahExportarExcel(taahHistCache[this.dataset.k])" style="background:var(--green-light);color:var(--green);border:1px solid #bbf7d0;border-radius:4px;padding:3px 8px;font-size:11px;cursor:pointer;font-family:inherit">Excel</button>';
+      h+='</td></tr>';
+      h+='</tbody></table></div>';
+      // Botón para ver historial completo
+      h+='<div style="padding:6px 0"><button data-tanque="'+tanque+'" onclick="taahVerDetalle(this)" style="font-size:11px;color:var(--blue);background:none;border:none;cursor:pointer;font-family:inherit;text-decoration:underline">Ver historial completo →</button></div>';
+      h+='</div>';
+    });
+    cont.innerHTML=h||'<p class="no-data">Sin datos</p>';
+    return;
+  }
+
+  // Tanque específico: historial completo
+  apiFetch({modulo:'taah',action:'historial',tanque:tk}).then(function(d){
+    if(!d.ok||!d.registros.length){cont.innerHTML='<p class="no-data">Sin inspecciones para '+tk+'</p>';return;}
+    d.registros.forEach(function(reg){reg.FECHA=fmtFecha(reg.FECHA);});
+    var r=d.registros[0];
+    var h='<div class="ficha-kpis">';
+    h+='<div class="ficha-kpi"><div class="lbl">Tanque</div><div class="val">'+tk+'</div></div>';
+    h+='<div class="ficha-kpi"><div class="lbl">Última insp.</div><div class="val" style="color:var(--blue)">'+r.FECHA+'</div></div>';
+    h+='<div class="ficha-kpi"><div class="lbl">Operador</div><div class="val">'+r.OPERADOR+'</div></div>';
+    h+='</div>';
+    var fichaItemNum=0;
+    Object.keys(TAAH_SECCIONES).forEach(function(sec){
+      h+='<div class="ficha-card"><h3>'+sec+'</h3><table><thead><tr><th style="width:28px;text-align:center">#</th><th>Verificación</th><th>Estado</th></tr></thead><tbody>';
+      TAAH_SECCIONES[sec].forEach(function(it){fichaItemNum++;h+='<tr><td style="font-size:11px;font-weight:700;color:var(--text4);text-align:center">'+fichaItemNum+'</td><td style="white-space:normal">'+it.label+'</td><td>'+badge(r[it.key])+'</td></tr>';});
+      h+='</tbody></table></div>';
+    });
+    h+='<div class="ficha-card"><h3>Historial de inspecciones</h3><div class="tbl-wrap"><table>';
+    h+='<thead><tr><th>Fecha</th><th>Operador</th><th>OT</th><th>Observaciones</th><th>Acciones</th></tr></thead><tbody>';
+    d.registros.forEach(function(reg,idx){
+      h+='<tr><td class="tag-cell">'+reg.FECHA+'</td><td>'+(reg.OPERADOR||'')+'</td><td>'+(reg.OT||'')+'</td><td class="obs-cell">'+(reg.OBSERVACIONES||'')+'</td>';
+      h+='<td style="white-space:nowrap">';
+      h+='<button onclick="taahImprimirPDF(taahHistData['+idx+'])" style="background:var(--red-light);color:var(--red);border:1px solid #fecaca;border-radius:4px;padding:3px 8px;font-size:11px;cursor:pointer;font-family:inherit;margin-right:4px">PDF</button>';
+      h+='<button onclick="taahExportarExcel(taahHistData['+idx+'])" style="background:var(--green-light);color:var(--green);border:1px solid #bbf7d0;border-radius:4px;padding:3px 8px;font-size:11px;cursor:pointer;font-family:inherit">Excel</button>';
+      h+='</td></tr>';
+    });
+    window.taahHistData=d.registros;
+    h+='</tbody></table></div></div>';
+    cont.innerHTML=h;
+  }).catch(function(e){cont.innerHTML='<p class="error-msg">'+e.message+'</p>';});
+}
+
+var TAAH_BRM_KEYS=['env_pintura','techo_escalera','techo_pintura','techo_barandas','con_pintura_conexiones','inc_espumigeno'];
+var TAAH_PCT_KEYS=['techo_sup_roturas'];
+function taahInitCarga(){
+  setFecha('taah-c-fecha');
+  var h='';
+  var itemNum=0;
+  Object.keys(TAAH_SECCIONES).forEach(function(sec){
+    h+='<div class="taah-sec-hdr">'+sec+'</div>';
+    h+='<table class="carga-table"><thead><tr><th style="width:28px;text-align:center">#</th><th>Verificación</th><th style="width:220px">Respuesta</th><th>Observaciones</th></tr></thead><tbody>';
+    TAAH_SECCIONES[sec].forEach(function(it){
+      itemNum++;
+      var vals = TAAH_PCT_KEYS.indexOf(it.key)>=0 ? ['0%','<25%','<50%','>50%'] : TAAH_BRM_KEYS.indexOf(it.key)>=0 ? ['BIEN','REGULAR','MAL'] : ['SI','NO'];
+      h+='<tr><td style="font-size:11px;font-weight:700;color:var(--text4);text-align:center;white-space:nowrap">'+itemNum+'</td><td style="white-space:normal;font-size:12px">'+it.label+'</td>';
+      h+='<td>'+taahCheckbox(it.key, vals, 'taah')+'</td>';
+      h+='<td><input type="text" id="taah_obs_'+it.key+'" placeholder="..." style="width:130px"></td></tr>';
+    });
+    h+='</tbody></table>';
+  });
+  document.getElementById('taah-c-secciones').innerHTML=h;
+}
+function taahGuardar(){
+  var tk=document.getElementById('taah-c-tanque').value,fecha=document.getElementById('taah-c-fecha').value,operador=document.getElementById('taah-c-operador').value.trim(),ot=document.getElementById('taah-c-ot').value.trim(),msg=document.getElementById('taah-c-msg');
+  if(!tk||!fecha||!operador){msg.className='msg-err';msg.textContent='Completá tanque, fecha y operador';return;}
+  var body={modulo:'taah',tanque:tk,fecha:fecha,operador:operador,ot:ot,observaciones:document.getElementById('taah-c-obs').value.trim()};
+  Object.keys(TAAH_SECCIONES).forEach(function(sec){TAAH_SECCIONES[sec].forEach(function(it){body[it.key]=document.getElementById('taah_'+it.key)?document.getElementById('taah_'+it.key).value.trim():'';});});
+  msg.className='msg-ok';msg.textContent='Guardando...';
+  apiPost(body).then(function(d){if(d.ok){msg.textContent='✅ Guardado correctamente';taahData=null;taahLoad();setTimeout(function(){taahLimpiar();},800);}else{msg.className='msg-err';msg.textContent='❌ '+(d.error||'Error');}}).catch(function(){msg.className='msg-err';msg.textContent='❌ Error de conexión';});
+}
+
+
+// ══ FUNCIONES LIMPIAR ══
+function autoLimpiar(){
+  document.getElementById('auto-c-fecha').value='';setFecha('auto-c-fecha');
+  document.getElementById('auto-c-horas').value='';
+  document.getElementById('auto-c-realizo').value='';
+  document.getElementById('auto-c-ot').value='';
+  document.getElementById('auto-c-obs').value='';
+  AUTO_ITEMS.forEach(function(_,i){var s=document.getElementById('auto_est_'+i);if(s){s.value='';s.style.background='';s.style.color='';s.style.borderColor='';}var o=document.getElementById('auto_obs_'+i);if(o)o.value='';});
+  document.getElementById('auto-c-msg').textContent='';
+}
+function compLimpiar(){
+  document.getElementById('comp-c-fecha').value='';setFecha('comp-c-fecha');
+  document.getElementById('comp-c-realizo').value='';
+  document.getElementById('comp-c-ot').value='';
+  ['102','104'].forEach(function(cod){
+    COMP_ITEMS.forEach(function(it){var el=document.getElementById('comp_'+cod+'_'+it.key);if(el)el.value='';});
+    var obs=document.getElementById('comp-c-obs-'+cod);if(obs)obs.value='';
+  });
+  document.getElementById('comp-c-msg').textContent='';
+}
+function genLimpiar(){
+  document.getElementById('gen-c-fecha').value='';setFecha('gen-c-fecha');
+  document.getElementById('gen-c-operador').value='';
+  document.getElementById('gen-c-ot').value='';
+  document.getElementById('gen-c-obs').value='';
+  GEN_ITEMS.forEach(function(it,i){var el=document.getElementById('gen_'+it.key);if(el)el.value='';var o=document.getElementById('gen_obs_'+i);if(o)o.value='';});
+  document.getElementById('gen-c-msg').textContent='';
+}
+function incLimpiar(){
+  document.getElementById('inc-c-fecha').value='';setFecha('inc-c-fecha');
+  document.getElementById('inc-c-realizo').value='';
+  document.getElementById('inc-c-ot').value='';
+  INC_AREAS.forEach(function(area){
+    var aId=area.replace(/[^a-zA-Z0-9]/g,'_');
+    INC_ITEMS.forEach(function(it){
+      var el=document.getElementById('inc_'+aId+'_'+it.key);if(el)el.value='';
+      document.querySelectorAll('#inc-c-container .check-btn').forEach(function(b){b.classList.remove('sel');});
+    });
+    var obs=document.getElementById('inc_obs_gen_'+aId);if(obs)obs.value='';
+  });
+  document.getElementById('inc-c-msg').textContent='';
+}
+function taahLimpiar(){
+  document.getElementById('taah-c-tanque').value='';
+  document.getElementById('taah-c-fecha').value='';setFecha('taah-c-fecha');
+  document.getElementById('taah-c-operador').value='';
+  document.getElementById('taah-c-ot').value='';
+  document.getElementById('taah-c-obs').value='';
+  Object.keys(TAAH_SECCIONES).forEach(function(sec){
+    TAAH_SECCIONES[sec].forEach(function(it){
+      var el=document.getElementById('taah_'+it.key);if(el)el.value='';
+      var oe=document.getElementById('taah_obs_'+it.key);if(oe)oe.value='';
+    });
+  });
+  // Resetear botones de checkbox
+  document.querySelectorAll('.taah-chk-btn').forEach(function(b){
+    b.style.opacity='.35';b.style.borderColor='transparent';
+  });
+  document.getElementById('taah-c-msg').textContent='';
+}
+
+// HISTORIAL INCENDIO POR FECHA CON PDF/EXCEL
+function incCargarHistorial(){
+  document.getElementById('inc-historial-content').innerHTML='<p class="loading">Cargando...</p>';
+  apiFetch({modulo:'incendio',action:'lista_por_fecha'}).then(function(d){
+    if(!d.ok||!d.fechas||!d.fechas.length){document.getElementById('inc-historial-content').innerHTML='<p class="no-data">Sin registros cargados.</p>';return;}
+    window.incFechasData=d.fechas;
+    console.log('Areas en backend:',d.areaKeys,'INC_AREAS:',INC_AREAS);
+    // Formatear fechas por si vienen como string raro
+    d.fechas.forEach(function(g){
+      if(g.FECHA && (g.FECHA.indexOf('GMT')>=0||g.FECHA.indexOf('Mon ')>=0||g.FECHA.indexOf('Tue ')>=0||g.FECHA.indexOf('Wed ')>=0||g.FECHA.indexOf('Thu ')>=0||g.FECHA.indexOf('Fri ')>=0||g.FECHA.indexOf('Sat ')>=0||g.FECHA.indexOf('Sun ')>=0)){
+        try{var dt=new Date(g.FECHA);g.FECHA=dt.getDate().toString().padStart(2,'0')+'/'+(dt.getMonth()+1).toString().padStart(2,'0')+'/'+dt.getFullYear();}catch(e){}
+      }
+      // undefined -> guión
+      if(!g.OT||g.OT==='undefined')g.OT='';
+    });
+    var h='<table><thead><tr><th>Fecha</th><th>Realiz&oacute;</th><th>OT</th>';
+    INC_AREAS.forEach(function(area){h+='<th style="white-space:normal;max-width:90px">'+area+'</th>';});
+    h+='<th>Acciones</th></tr></thead><tbody>';
+    d.fechas.forEach(function(grupo,idx){
+      h+='<tr><td class="tag-cell">'+grupo.FECHA+'</td><td>'+grupo.REALIZO+'</td><td>'+(grupo.OT||'&mdash;')+'</td>';
+      INC_AREAS.forEach(function(area){
+        var r=grupo.areas[area];
+        if(!r){h+='<td><span class="badge-nd">&mdash;</span></td>';return;}
+        var hayNo=INC_ITEMS.some(function(it){return String(r[it.key]||'').toUpperCase()==='NO';});
+        h+='<td style="text-align:center"><span style="font-size:11px;font-weight:600;color:'+(hayNo?'var(--red)':'var(--green)')+'">'+( hayNo?'NOK':'OK')+'</span></td>';
+      });
+      h+='<td style="white-space:nowrap">';
+      h+='<button onclick="incImprimirPDF(incFechasData['+idx+'])" style="background:var(--red-light);color:var(--red);border:1px solid #fecaca;border-radius:4px;padding:3px 8px;font-size:11px;cursor:pointer;font-family:inherit;margin-right:4px">&#x1F5A8; PDF</button>';
+      h+='<button onclick="incExportarExcelFecha(incFechasData['+idx+'])" style="background:var(--green-light);color:var(--green);border:1px solid #bbf7d0;border-radius:4px;padding:3px 8px;font-size:11px;cursor:pointer;font-family:inherit">&#x1F4CA; Excel</button>';
+      h+='</td></tr>';
+    });
+    document.getElementById('inc-historial-content').innerHTML=h+'</tbody></table>';
+  }).catch(function(e){document.getElementById('inc-historial-content').innerHTML='<p class="error-msg">Error: '+e.message+'</p>';});
+}
+
+// IMPRIMIR PDF - INCENDIO (todas las areas juntas)
+function incFmtFecha(f){
+  if(!f)return '-';
+  if(f.length>12){try{var dt=new Date(f);if(!isNaN(dt))return dt.getDate().toString().padStart(2,'0')+'/'+(dt.getMonth()+1).toString().padStart(2,'0')+'/'+dt.getFullYear();}catch(e){}}
+  return f;
+}
+
+function incImprimirPDF(grupo){
+  var fecha=incFmtFecha(grupo.FECHA);
+  var ot=(grupo.OT&&grupo.OT!=='undefined'&&grupo.OT!=='')?grupo.OT:'-';
+  var areasKeys=Object.keys(grupo.areas||{});
+  if(!areasKeys.length){alert('Sin datos de areas');return;}
+
+  var win=window.open('','_blank','width=900,height=1100');
+  win.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Red Contra Incendio</title>');
+  win.document.write('<style>');
+  win.document.write('body{font-family:Arial,sans-serif;font-size:10px;margin:0;padding:12px;color:#000}');
+  win.document.write('table{width:100%;border-collapse:collapse}');
+  win.document.write('th,td{padding:5px 7px;border:1px solid #ccc;font-size:10px}');
+  win.document.write('th{background:#444;color:#fff;text-align:left}');
+  win.document.write('.ahdr{background:#e67e22;color:#fff;font-weight:bold;padding:5px 10px;font-size:11px;margin-top:12px;display:block}');
+  win.document.write('.ck{text-align:center;font-weight:bold}');
+  win.document.write('.firma{margin-top:36px;text-align:right}');
+  win.document.write('.fline{display:inline-block;border-top:1px solid #000;width:220px;text-align:center;padding-top:4px;font-size:9px}');
+  win.document.write('@media print{body{padding:8px;margin:0}@page{size:A4;margin:10mm}}');
+  win.document.write('</style></head><body>');
+
+  // Header
+  win.document.write('<div style="border:2px solid #000;padding:8px 12px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center">');
+  win.document.write('<img src="'+LOGO_EXPLORA+'" style="height:36px;width:auto">');
+  win.document.write('<div style="text-align:center"><div style="font-size:12px;font-weight:bold;text-transform:uppercase">PRUEBA DE RED CONTRA INCENDIO - DILUVIOS</div>');
+  win.document.write('<div style="font-size:9px;color:#555">CPM - Control Preventivo de Mantenimiento</div></div>');
+  win.document.write('<div style="font-size:9px;text-align:right">Fecha: <b>'+fecha+'</b><br>OT: <b>'+ot+'</b></div>');
+  win.document.write('</div>');
+  win.document.write('<div style="font-size:10px;margin-bottom:8px">Realizó: <b>'+(grupo.REALIZO||'-')+'</b></div>');
+
+  // Una sección por área
+  areasKeys.forEach(function(areaKey){
+    var r=grupo.areas[areaKey];
+    if(!r)return;
+    win.document.write('<span class="ahdr">'+areaKey+'</span>');
+    win.document.write('<table><thead><tr>');
+    win.document.write('<th style="width:58%">Verificación</th>');
+    win.document.write('<th class="ck" style="width:13%">SI</th>');
+    win.document.write('<th class="ck" style="width:13%">NO</th>');
+    win.document.write('<th>Observaciones</th>');
+    win.document.write('</tr></thead><tbody>');
+    INC_ITEMS.forEach(function(it){
+      var v=String(r[it.key]||'').toUpperCase().trim();
+      win.document.write('<tr>');
+      win.document.write('<td>'+it.label+'</td>');
+      win.document.write('<td class="ck">'+(v==='SI'?'☑':'☐')+'</td>');
+      win.document.write('<td class="ck">'+(v==='NO'?'☑':'☐')+'</td>');
+      win.document.write('<td style="font-size:9px;color:#555">'+(r.OBSERVACIONES||'')+'</td>');
+      win.document.write('</tr>');
+    });
+    win.document.write('</tbody></table>');
+  });
+
+  win.document.write('<div class="firma"><div class="fline">Firma y aclaración</div></div>');
+  win.document.write('</body></html>');
+  win.document.close();
+  setTimeout(function(){win.print();},400);
+}
+
+function incExportarExcelFecha(grupo){
+  var fecha=grupo.FECHA||'';
+  if(fecha.length>12){try{var dt=new Date(fecha);fecha=dt.getDate().toString().padStart(2,'0')+'/'+(dt.getMonth()+1).toString().padStart(2,'0')+'/'+dt.getFullYear();}catch(e){}}
+  var rows=[['PRUEBA DE RED CONTRA INCENDIO - DILUVIOS'],[]];
+  rows.push(['Fecha',fecha],['Realizo',grupo.REALIZO||'-'],['OT',grupo.OT&&grupo.OT!=='undefined'?grupo.OT:'-'],[]);
+  var areasKeys=Object.keys(grupo.areas||{});
+  areasKeys.forEach(function(areaKey){
+    var r=grupo.areas[areaKey];
+    rows.push([areaKey],['Verificacion','Resultado']);
+    if(!r){rows.push(['Sin datos','']);rows.push([]);return;}
+    INC_ITEMS.forEach(function(it){rows.push([it.label,r[it.key]||'-']);});
+    rows.push(['Observaciones',r.OBSERVACIONES||''],[]);
+  });
+  var csv=rows.map(function(row){return row.map(function(c){return '"'+String(c).replace(/"/g,'""')+'"';}).join(',');}).join('\r\n');
+  var blob=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8'});
+  var a=document.createElement('a');a.href=URL.createObjectURL(blob);
+  a.download='Incendio_'+fecha.replace(/\//g,'-')+'.csv';a.click();
+}
+// ══ HISTORIAL TAAH CON PDF/EXCEL ══
+function taahCargarFicha(){
+  var tk=document.getElementById('taah-f-tanque').value;if(!tk)return;
+  document.getElementById('taah-ficha-content').innerHTML='<p class="loading">Cargando...</p>';
+  apiFetch({modulo:'taah',action:'historial',tanque:tk}).then(function(d){
+    if(!d.ok||!d.registros.length){document.getElementById('taah-ficha-content').innerHTML='<p class="no-data">Sin inspecciones para '+tk+'</p>';return;}
+    // Formatear fecha si viene como objeto Date
+    d.registros.forEach(function(reg){
+      if(reg.FECHA&&(reg.FECHA.indexOf('GMT')>=0||reg.FECHA.indexOf(' Apr ')>=0||reg.FECHA.indexOf(' Jan ')>=0||reg.FECHA.indexOf(' Feb ')>=0||reg.FECHA.indexOf(' Mar ')>=0||reg.FECHA.indexOf(' May ')>=0||reg.FECHA.indexOf(' Jun ')>=0||reg.FECHA.indexOf(' Jul ')>=0||reg.FECHA.indexOf(' Aug ')>=0||reg.FECHA.indexOf(' Sep ')>=0||reg.FECHA.indexOf(' Oct ')>=0||reg.FECHA.indexOf(' Nov ')>=0||reg.FECHA.indexOf(' Dec ')>=0)){
+        try{var dt=new Date(reg.FECHA);reg.FECHA=dt.getDate().toString().padStart(2,'0')+'/'+(dt.getMonth()+1).toString().padStart(2,'0')+'/'+dt.getFullYear();}catch(e){}
+      }
+    });
+    var r=d.registros[0];
+    var h='<div class="ficha-kpis"><div class="ficha-kpi"><div class="lbl">Tanque</div><div class="val">'+tk+'</div></div><div class="ficha-kpi"><div class="lbl">Última inspección</div><div class="val" style="color:var(--blue)">'+r.FECHA+'</div></div><div class="ficha-kpi"><div class="lbl">Operador</div><div class="val" style="font-size:14px">'+r.OPERADOR+'</div></div></div>';
+    var fichaItemNum=0;
+    Object.keys(TAAH_SECCIONES).forEach(function(sec){
+      h+='<div class="ficha-card"><h3>'+sec+'</h3><table><thead><tr><th style="width:28px;text-align:center">#</th><th>Verificación</th><th>Estado</th></tr></thead><tbody>';
+      TAAH_SECCIONES[sec].forEach(function(it){fichaItemNum++;h+='<tr><td style="font-size:11px;font-weight:700;color:var(--text4);text-align:center">'+fichaItemNum+'</td><td style="white-space:normal">'+it.label+'</td><td>'+badge(r[it.key])+'</td></tr>';});
+      h+='</tbody></table></div>';
+    });
+    // Historial con botones
+    if(d.registros.length>0){
+      h+='<div class="ficha-card"><h3>📋 Historial de Inspecciones</h3><div class="tbl-wrap"><table><thead><tr><th>Fecha</th><th>Operador</th><th>OT</th><th>Observaciones</th><th>Acciones</th></tr></thead><tbody>';
+      d.registros.forEach(function(reg,idx){
+        h+='<tr><td class="tag-cell">'+reg.FECHA+'</td><td>'+reg.OPERADOR+'</td><td>'+reg.OT+'</td><td class="obs-cell">'+reg.OBSERVACIONES+'</td>';
+        h+='<td style="white-space:nowrap">';
+        h+='<button onclick="taahImprimirPDF(taahHistData['+idx+'])" style="background:var(--red-light);color:var(--red);border:1px solid #fecaca;border-radius:4px;padding:3px 8px;font-size:11px;cursor:pointer;font-family:inherit;margin-right:4px">🖨 PDF</button>';
+        h+='<button onclick="taahExportarExcel(taahHistData['+idx+'])" style="background:var(--green-light);color:var(--green);border:1px solid #bbf7d0;border-radius:4px;padding:3px 8px;font-size:11px;cursor:pointer;font-family:inherit">📊 Excel</button>';
+        h+='</td></tr>';
+      });
+      window.taahHistData = d.registros;
+      h+='</tbody></table></div></div>';
+    }
+    document.getElementById('taah-ficha-content').innerHTML=h;
+  }).catch(function(e){document.getElementById('taah-ficha-content').innerHTML='<p class="error-msg">❌ '+e.message+'</p>';});
+}
+
+// ══ LOGO BASE64 (Explora) ══
+
+
+// ══ IMPRIMIR PDF — INCENDIO ══
+
+// ══ EXPORTAR EXCEL — INCENDIO ══
+function incExportarExcel(r, area){
+  var rows=[['Verificación','Resultado','Observaciones']];
+  INC_ITEMS.forEach(function(it){rows.push([it.label,r[it.key]||'','']);});
+  rows.push([]);
+  rows.push(['Fecha',r.FECHA,'']);
+  rows.push(['Realizó',r.REALIZO,'']);
+  rows.push(['OT',r.OT,'']);
+  rows.push(['Área',area,'']);
+  rows.push(['Observaciones generales',r.OBSERVACIONES||'','']);
+  var csv=rows.map(function(row){return row.map(function(c){return'"'+String(c).replace(/"/g,'""')+'"';}).join(',');}).join('\r\n');
+  var bom='\uFEFF';
+  var blob=new Blob([bom+csv],{type:'text/csv;charset=utf-8'});
+  var a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download='Incendio_'+area.replace(/[^a-zA-Z0-9]/g,'_')+'_'+r.FECHA.replace(/\//g,'-')+'.csv';
+  a.click();
+}
+
+// ══ IMPRIMIR PDF — TAAH ══
+function taahImprimirPDF(r){
+  // Normalizar fecha
+  var fechaDisp=r.FECHA||'—';
+  if(fechaDisp.indexOf('GMT')>=0||fechaDisp.indexOf(' Apr ')>=0||fechaDisp.length>12){
+    try{var dt=new Date(fechaDisp);fechaDisp=dt.getDate().toString().padStart(2,'0')+'/'+(dt.getMonth()+1).toString().padStart(2,'0')+'/'+dt.getFullYear();}catch(e){}
+  }
+  var tk=r.TANQUE||'—';
+  var win=window.open('','_blank','width=850,height:1200');
+  win.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><title>TAAH — '+tk+'</title>');
+  win.document.write('<style>body{font-family:Arial,sans-serif;font-size:10px;margin:0;padding:10px;color:#000}table{width:100%;border-collapse:collapse}th,td{padding:4px 6px;border:1px solid #ccc;font-size:10px}th{background:#f0f0f0;font-weight:bold}.sec-title{background:#222;color:#fff;font-weight:bold;padding:5px 8px;font-size:10px;text-transform:uppercase;letter-spacing:.5px;margin-top:8px}.chk{font-size:12px}@media print{body{margin:0}}</style></head><body>');
+  // Header
+  win.document.write('<div style="border:2px solid #000;padding:8px;margin-bottom:8px">');
+  win.document.write('<div style="display:flex;justify-content:space-between;align-items:center">');
+  win.document.write('<img src="'+LOGO_EXPLORA+'" style="height:36px;width:auto">');
+  win.document.write('<div style="text-align:center"><div style="font-size:12px;font-weight:bold;text-transform:uppercase">TANQUES TECHO FIJO</div><div style="font-size:11px;font-weight:bold">CONTROL MENSUAL DE CONDICIÓN EXTERNO</div><div style="font-size:9px;color:#555">Control de condición externo — Mantenimiento / Res. SE 277/25</div></div>');
+  win.document.write('<div style="font-size:10px;text-align:right"><strong>Tanque:</strong> '+tk+'<br><strong>Fecha:</strong> '+r.FECHA+'</div></div>');
+  win.document.write('<div style="margin-top:6px;font-size:10px"><strong>OPERADOR:</strong> '+(r.OPERADOR||'—')+'&nbsp;&nbsp;&nbsp;<strong>OT N°:</strong> '+(r.OT||'—')+'</div>');
+  win.document.write('</div>');
+
+  // Secciones
+  var pdfNum=0;
+  Object.keys(TAAH_SECCIONES).forEach(function(sec){
+    win.document.write('<div class="sec-title">'+sec+'</div>');
+    win.document.write('<table><thead><tr><th style="text-align:center;width:24px">#</th><th style="text-align:left;width:53%">Verificación</th><th style="text-align:center;width:12%">SI</th><th style="text-align:center;width:12%">NO</th><th style="text-align:center;width:21%">BIEN / REGULAR / MAL</th></tr></thead><tbody>');
+    TAAH_SECCIONES[sec].forEach(function(it){
+      pdfNum++;
+      var v=String(r[it.key]||'').toUpperCase().trim();
+      var si=v==='SI'?'☑':'☐';
+      var no=v==='NO'?'☑':'☐';
+      var bien=(v==='BIEN'||v==='B')?'☑':'☐';
+      var reg=(v==='REGULAR'||v==='R')?'☑':'☐';
+      var mal=(v==='MAL'||v==='M')?'☑':'☐';
+      var brmCol=bien+' B &nbsp; '+reg+' R &nbsp; '+mal+' M';
+      win.document.write('<tr><td style="text-align:center;font-size:10px;font-weight:700;color:#888;width:24px">'+pdfNum+'</td><td>'+it.label+'</td><td style="text-align:center" class="chk">'+si+'</td><td style="text-align:center" class="chk">'+no+'</td><td style="text-align:center;font-size:11px">'+brmCol+'</td></tr>');
+    });
+    win.document.write('</tbody></table>');
+  });
+
+  if(r.OBSERVACIONES)win.document.write('<div style="margin-top:10px;border:1px solid #ccc;padding:8px"><strong>Observaciones generales:</strong> '+r.OBSERVACIONES+'</div>');
+  win.document.write('<div style="margin-top:40px;display:flex;justify-content:flex-end"><div style="border-top:1px solid #000;width:220px;text-align:center;padding-top:4px;font-size:9px">Firma y aclaración</div></div>');
+  win.document.write('</body></html>');
+  win.document.close();
+  setTimeout(function(){win.print();},400);
+}
+
+// ══ EXPORTAR EXCEL — TAAH ══
+function taahExportarExcel(r){
+  var rows=[['CONTROL MENSUAL DE CONDICIÓN EXTERNO — TAAH'],[]];
+  rows.push(['Tanque',r.TANQUE||'—']);
+  rows.push(['Fecha',r.FECHA||'—']);
+  rows.push(['Operador',r.OPERADOR||'—']);
+  rows.push(['OT',r.OT||'—']);
+  rows.push([]);
+  Object.keys(TAAH_SECCIONES).forEach(function(sec){
+    rows.push([sec.toUpperCase(),'','']);
+    rows.push(['Verificación','Estado/Respuesta','']);
+    TAAH_SECCIONES[sec].forEach(function(it){rows.push([it.label,r[it.key]||'','']);});
+    rows.push([]);
+  });
+  rows.push(['Observaciones generales',r.OBSERVACIONES||'']);
+  var csv=rows.map(function(row){return row.map(function(c){return'"'+String(c).replace(/"/g,'""')+'"';}).join(',');}).join('\r\n');
+  var bom='\uFEFF';
+  var blob=new Blob([bom+csv],{type:'text/csv;charset=utf-8'});
+  var a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download='TAAH_'+(r.TANQUE||'tanque').replace(/[^a-zA-Z0-9]/g,'_')+'_'+r.FECHA.replace(/\//g,'-')+'.csv';
+  a.click();
+}
+
+
+// ══ PDF y EXCEL — AUTOELEVADOR ══
+function autoPDF(r){
+  var win=window.open('','_blank','width=850,height=1000');
+  var rows=AUTO_ITEMS.map(function(it){return '<tr><td>'+it.label+'</td><td style="text-align:center;font-weight:bold">'+(String(r[it.key]||'').toUpperCase()==='OK'?'✅ OK':String(r[it.key]||'').toUpperCase()==='MAL'?'❌ MAL':(r[it.key]||'—'))+'</td></tr>';}).join('');
+  win.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Autoelevador</title><style>body{font-family:Arial,sans-serif;font-size:10px;margin:0;padding:14px;color:#000}table{width:100%;border-collapse:collapse}th,td{padding:5px 8px;border:1px solid #ccc;font-size:10px}th{background:#444;color:#fff;text-align:left}@media print{body{margin:0}}</style></head><body>');
+  win.document.write('<div style="border:2px solid #000;padding:8px 12px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center"><img src="'+LOGO_EXPLORA+'" style="height:36px;width:auto"><div style="text-align:center;font-size:12px;font-weight:bold;text-transform:uppercase">INSPECCIÓN SEMANAL AUTOELEVADOR</div><div style="font-size:9px;text-align:right">Fecha: <b>'+fmtFecha(r.FECHA)+'</b><br>Horas: <b>'+r.HORAS_USO+'</b></div></div>');
+  win.document.write('<div style="font-size:10px;margin-bottom:8px">Realizó: <b>'+r.REALIZO+'</b> &nbsp;&nbsp; OT: <b>'+(r.OT||'—')+'</b></div>');
+  win.document.write('<table><thead><tr><th style="width:70%">Ítem de inspección</th><th>Estado</th></tr></thead><tbody>'+rows+'</tbody></table>');
+  if(r.OBSERVACIONES)win.document.write('<div style="margin-top:10px;border:1px solid #ccc;padding:8px;font-size:10px"><strong>Observaciones:</strong> '+r.OBSERVACIONES+'</div>');
+  win.document.write('<div style="margin-top:30px;text-align:right"><div style="display:inline-block;border-top:1px solid #000;width:200px;text-align:center;padding-top:4px;font-size:9px">Firma y aclaración</div></div>');
+  win.document.write('</body></html>');
+  win.document.close();setTimeout(function(){win.print();},400);
+}
+function autoExcel(r){
+  var rows=[['INSPECCIÓN SEMANAL AUTOELEVADOR'],[]];
+  rows.push(['Fecha',r.FECHA],['Horas de uso',r.HORAS_USO],['Realizó',r.REALIZO],['OT',r.OT||'—'],[]);
+  rows.push(['Ítem','Estado']);
+  AUTO_ITEMS.forEach(function(it){rows.push([it.label,r[it.key]||'—']);});
+  rows.push([],['Observaciones',r.OBSERVACIONES||'']);
+  var csv=rows.map(function(row){return row.map(function(c){return'"'+String(c).replace(/"/g,'""')+'"';}).join(',');}).join('\r\n');
+
+  var blob=new Blob(['﻿'+csv],{type:'text/csv;charset=utf-8'});
+  var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='Autoelevador_'+r.FECHA.replace(/\//g,'-')+'.csv';a.click();
+}
+
+// ══ PDF y EXCEL — GENERADOR ══
+function genPDF(r){
+  var win=window.open('','_blank','width=850,height=1000');
+  var rows=GEN_ITEMS.map(function(it){return '<tr><td>'+it.label+'</td><td>'+(r[it.key]||'—')+'</td></tr>';}).join('');
+  win.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Generador</title><style>body{font-family:Arial,sans-serif;font-size:10px;margin:0;padding:14px;color:#000}table{width:100%;border-collapse:collapse}th,td{padding:5px 8px;border:1px solid #ccc;font-size:10px}th{background:#444;color:#fff;text-align:left}@media print{body{margin:0}}</style></head><body>');
+  win.document.write('<div style="border:2px solid #000;padding:8px 12px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center"><img src="'+LOGO_EXPLORA+'" style="height:36px;width:auto"><div style="text-align:center;font-size:12px;font-weight:bold;text-transform:uppercase">PREVENTIVO GRUPO GENERADOR</div><div style="font-size:9px;text-align:right">Fecha: <b>'+fmtFecha(r.FECHA)+'</b><br>OT: <b>'+(r.OT||'—')+'</b></div></div>');
+  win.document.write('<div style="font-size:10px;margin-bottom:8px">Operador: <b>'+r.OPERADOR+'</b></div>');
+  win.document.write('<table><thead><tr><th style="width:60%">Revisión</th><th>Estado / Valor</th></tr></thead><tbody>'+rows+'</tbody></table>');
+  if(r.OBSERVACIONES)win.document.write('<div style="margin-top:10px;border:1px solid #ccc;padding:8px;font-size:10px"><strong>Observaciones:</strong> '+r.OBSERVACIONES+'</div>');
+  win.document.write('<div style="margin-top:30px;text-align:right"><div style="display:inline-block;border-top:1px solid #000;width:200px;text-align:center;padding-top:4px;font-size:9px">Firma y aclaración</div></div>');
+  win.document.write('</body></html>');
+  win.document.close();setTimeout(function(){win.print();},400);
+}
+function genExcel(r){
+  var rows=[['PREVENTIVO GRUPO GENERADOR'],[]];
+  rows.push(['Fecha',r.FECHA],['Operador',r.OPERADOR],['OT',r.OT||'—'],[]);
+  rows.push(['Revisión','Estado / Valor']);
+  GEN_ITEMS.forEach(function(it){rows.push([it.label,r[it.key]||'—']);});
+  rows.push([],['Observaciones',r.OBSERVACIONES||'']);
+  var csv=rows.map(function(row){return row.map(function(c){return'"'+String(c).replace(/"/g,'""')+'"';}).join(',');}).join('\r\n');
+
+  var blob=new Blob(['﻿'+csv],{type:'text/csv;charset=utf-8'});
+  var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='Generador_'+r.FECHA.replace(/\//g,'-')+'.csv';a.click();
+}
+
+// ══ PDF y EXCEL — COMPRESORES ══
+function compPDF(r){
+  var win=window.open('','_blank','width=850,height=1000');
+  var rows=COMP_ITEMS.map(function(it){return '<tr><td>'+it.label+'</td><td>'+(r[it.key]||'—')+'</td></tr>';}).join('');
+  win.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Compresores</title><style>body{font-family:Arial,sans-serif;font-size:10px;margin:0;padding:14px;color:#000}table{width:100%;border-collapse:collapse}th,td{padding:5px 8px;border:1px solid #ccc;font-size:10px}th{background:#444;color:#fff;text-align:left}@media print{body{margin:0}}</style></head><body>');
+  win.document.write('<div style="border:2px solid #000;padding:8px 12px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center"><img src="'+LOGO_EXPLORA+'" style="height:36px;width:auto"><div style="text-align:center;font-size:12px;font-weight:bold;text-transform:uppercase">PREVENTIVO COMPRESORES DE AIRE</div><div style="font-size:9px;text-align:right">Fecha: <b>'+fmtFecha(r.FECHA)+'</b><br>Compresor: <b>'+(r.COMPRESOR||'—')+'</b></div></div>');
+  win.document.write('<div style="font-size:10px;margin-bottom:8px">Realizó: <b>'+r.REALIZO+'</b> &nbsp;&nbsp; OT: <b>'+(r.OT||'—')+'</b></div>');
+  win.document.write('<table><thead><tr><th style="width:60%">Ítem</th><th>Estado / Valor</th></tr></thead><tbody>'+rows+'</tbody></table>');
+  if(r.OBSERVACIONES)win.document.write('<div style="margin-top:10px;border:1px solid #ccc;padding:8px;font-size:10px"><strong>Observaciones:</strong> '+r.OBSERVACIONES+'</div>');
+  win.document.write('<div style="margin-top:30px;text-align:right"><div style="display:inline-block;border-top:1px solid #000;width:200px;text-align:center;padding-top:4px;font-size:9px">Firma y aclaración</div></div>');
+  win.document.write('</body></html>');
+  win.document.close();setTimeout(function(){win.print();},400);
+}
+function compExcel(r){
+  var rows=[['PREVENTIVO COMPRESORES DE AIRE'],[]];
+  rows.push(['Fecha',r.FECHA],['Compresor',r.COMPRESOR||'—'],['Realizó',r.REALIZO],['OT',r.OT||'—'],[]);
+  rows.push(['Ítem','Estado / Valor']);
+  COMP_ITEMS.forEach(function(it){rows.push([it.label,r[it.key]||'—']);});
+  rows.push([],['Observaciones',r.OBSERVACIONES||'']);
+  var csv=rows.map(function(row){return row.map(function(c){return'"'+String(c).replace(/"/g,'""')+'"';}).join(',');}).join('\r\n');
+
+  var blob=new Blob(['﻿'+csv],{type:'text/csv;charset=utf-8'});
+  var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='Compresor_'+(r.COMPRESOR||'comp').replace(/[^a-zA-Z0-9]/g,'_')+'_'+r.FECHA.replace(/\//g,'-')+'.csv';a.click();
+}
+
+
+function taahVerDetalle(el){
+  var tk = el.getAttribute('data-tanque');
+  if(tk){
+    document.getElementById('taah-f-tanque').value = tk;
+    taahCargarFicha();
+  }
+}
+
+
+function taahCheckbox(key,vals,idPrefix){var stored=idPrefix+"_"+key;var btns=vals.map(function(v){var bg=v==="SI"||v==="BIEN"?"var(--green-light)":v==="NO"||v==="MAL"?"var(--red-light)":v==="REGULAR"?"#fef9c3":"var(--surface2)";var color=v==="SI"||v==="BIEN"?"var(--green)":v==="NO"||v==="MAL"?"var(--red)":v==="REGULAR"?"#b45309":"var(--text4)";return "<button type=\"button\" data-val=\""+v+"\" data-field=\""+stored+"\" onclick=\"taahToggleChk(this)\" style=\"padding:3px 10px;border-radius:12px;font-size:11px;font-weight:600;cursor:pointer;border:2px solid transparent;opacity:.4;font-family:inherit;margin:0 2px;background:"+bg+";color:"+color+"\">"+v+"</button>";}).join("");return "<div style=\"display:flex;align-items:center;gap:2px\">"+btns+"<input type=\"hidden\" id=\""+stored+"\" value=\"\"></div>";}
+function taahToggleChk(btn){var field=btn.getAttribute("data-field");var parent=btn.parentElement;parent.querySelectorAll("button[data-field=\""+field+"\"]").forEach(function(b){b.style.opacity=".4";b.style.borderColor="transparent";});btn.style.opacity="1";btn.style.borderColor="currentColor";var el=document.getElementById(field);if(el)el.value=btn.getAttribute("data-val");}
+// ══ INIT ══
+window.onload=function(){
+  setInterval(function(){document.getElementById('hdr-time').textContent=new Date().toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'});},1000);
+  document.getElementById('hdr-time').textContent=new Date().toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'});
+  autoInitCarga();compInitCarga();genInitCarga();incInitCarga();taahInitCarga();
+  autoLoad();
+  // auth handled by login overlay
+};
+
+// ══ LOGIN ══
+var VENC_URL='https://script.google.com/macros/s/AKfycbxBBiJZexMdWlGFDWKnIaPiOmSACB9RL1G-w03amZYBBwIw4AUWl59WzIdZoyqNrtiXvg/exec';
+var SESSION_KEY='mec_session';
+var currentUser='',currentRol='';
+
+function onLoginSuccess(){
+  document.getElementById('user-pill').style.display='flex';
+  document.getElementById('user-name-top').textContent=currentUser;
+  document.getElementById('user-rol-top').textContent=currentRol;
+  var rl=currentRol.toLowerCase();
+  var soloLectura=rl.includes('operador_electrico')||rl.includes('electrico');
+  if(soloLectura){
+    ['auto-tab-carga','comp-tab-carga','gen-tab-carga','inc-tab-carga','taah-tab-carga'].forEach(function(id){
+      var el=document.getElementById(id);if(el){el.classList.add('locked');el.title='Solo lectura';}
+    });
+  }
+}
+
+function doLogin(){
+  var u=document.getElementById('login-user').value.trim();
+  var p=document.getElementById('login-pass').value;
+  var err=document.getElementById('login-error');
+  var loading=document.getElementById('login-loading');
+  if(!u||!p){err.textContent='Completá usuario y contraseña';return;}
+  err.textContent='';loading.style.display='block';
+  fetch(VENC_URL,{method:'POST',body:JSON.stringify({action:'login',usuario:u,contrasena:p})})
+    .then(function(r){return r.json();})
+    .then(function(data){
+      loading.style.display='none';
+      if(data.ok){
+        currentUser=data.usuario||u;currentRol=data.rol||'';
+        sessionStorage.setItem(SESSION_KEY,JSON.stringify({usuario:currentUser,rol:currentRol}));
+        document.getElementById('login-overlay').style.display='none';
+        onLoginSuccess();
+      } else {
+        err.textContent=data.error||'Usuario o contraseña incorrectos';
+      }
+    })
+    .catch(function(){loading.style.display='none';err.textContent='Error de conexión. Intentá de nuevo.';});
+}
+
+function doLogout(){
+  sessionStorage.removeItem(SESSION_KEY);
+  location.reload();
+}
+
+function guardarCambioPass(){
+  var actual=document.getElementById('cp-actual').value;
+  var nueva=document.getElementById('cp-nueva').value;
+  var confirmar=document.getElementById('cp-confirmar').value;
+  var err=document.getElementById('cp-error');
+  if(!actual||!nueva||!confirmar){err.textContent='Completá todos los campos';return;}
+  if(nueva!==confirmar){err.textContent='Las contraseñas nuevas no coinciden';return;}
+  if(nueva.length<4){err.textContent='La contraseña debe tener al menos 4 caracteres';return;}
+  err.textContent='Guardando...';
+  fetch(VENC_URL,{method:'POST',body:JSON.stringify({action:'cambiarContrasena',usuario:currentUser,contrasena_actual:actual,contrasena_nueva:nueva})})
+    .then(function(r){return r.json();})
+    .then(function(data){
+      if(data.ok){
+        document.getElementById('cp-overlay').classList.add('hidden');
+        alert('Contraseña cambiada correctamente');
+      } else {
+        err.textContent=data.error||'Error al cambiar contraseña';
+      }
+    })
+    .catch(function(){err.textContent='Error de conexión';});
+}
+
+// Verificar sesión guardada al cargar
+(function(){
+  var saved=sessionStorage.getItem(SESSION_KEY);
+  if(saved){
+    try{
+      var s=JSON.parse(saved);
+      currentUser=s.usuario;currentRol=s.rol;
+      document.getElementById('login-overlay').style.display='none';
+      onLoginSuccess();
+    }catch(e){sessionStorage.removeItem(SESSION_KEY);}
+  }
+})();
+
+
+// ══ VIBRACIONES JS ══
+const VIB_API      = 'https://script.google.com/macros/s/AKfycbxA5iwLK0oavfD3YoBrp_z-a2BI3HTNwHeP9mBjPmyT4z2U3yO9V_7qNPQTZHzV9Gl5Jg/exec';
+const VIB_API_POST = 'https://script.google.com/macros/s/AKfycby3h0k50ruotM0H7B4vcrEZzG0hb8CDCSLAZb_hr6GGk4OpL1mOspRrqtM5o14oG_U42w/exec';
+const VIB_A_CRITICO=5,VIB_A_ALERTA=2.5,VIB_A_INICIO=1.5,VIB_V_ALERTA=2.3,VIB_V_PELIGRO=4.5;
+let vibAllData=[],vibCharts={},vibLoaded=false;
+const VIB_CHART_COLORS=['#2563eb','#16a34a','#7c3aed','#dc2626','#ea580c','#0284c7','#15803d','#6d28d9','#b91c1c','#ca8a04'];
+const VIB_PUNTOS={
+  'vib-sup-motor-acel':[{num:'01',tipo:'Acel'},{num:'02',tipo:'Acel'}],
+  'vib-sup-motor-veloc':[{num:'05',tipo:'Veloc'},{num:'06',tipo:'Veloc'}],
+  'vib-sup-bomba-acel':[{num:'03',tipo:'Acel'},{num:'04',tipo:'Acel'}],
+  'vib-sup-bomba-veloc':[{num:'07',tipo:'Veloc'},{num:'08',tipo:'Veloc'}],
+  'vib-inf-motor-acel':[{num:'09',tipo:'Acel'},{num:'10',tipo:'Acel'}],
+  'vib-inf-motor-veloc':[{num:'16',tipo:'Veloc'},{num:'17',tipo:'Veloc'}],
+  'vib-inf-axial-acel':[{num:'11',tipo:'Acel'},{num:'12',tipo:'Acel'}],
+  'vib-inf-axial-veloc':[{num:'18',tipo:'Veloc'},{num:'19',tipo:'Veloc'}],
+  'vib-inf-bomba-acel':[{num:'13',tipo:'Acel'},{num:'14',tipo:'Acel'}],
+  'vib-inf-bomba-veloc':[{num:'20',tipo:'Veloc'},{num:'21',tipo:'Veloc'}],
+  'vib-inf-voluta-acel':[{num:'15',tipo:'Acel'}],
+  'vib-inf-voluta-veloc':[{num:'22',tipo:'Veloc'}]
+};
+const VIB_TODOS_PUNTOS=Object.values(VIB_PUNTOS).flat();
+
+function vibSwitchTab(tab){
+  document.querySelectorAll('.vitab').forEach(el=>el.classList.remove('active'));
+  document.getElementById('vib-nav-'+tab).classList.add('active');
+  document.querySelectorAll('.vib-view').forEach(p=>p.classList.remove('vib-active'));
+  document.getElementById('vib-page-'+tab).classList.add('vib-active');
+  document.getElementById('vib-fbar-general').style.display=tab==='general'?'block':'none';
+  document.getElementById('vib-fbar-ficha').style.display=tab==='ficha'?'block':'none';
+}
+
+function vibParseDate(s){if(!s)return new Date(0);const st=String(s).trim();if(/^\d{2}\/\d{2}\/\d{4}$/.test(st)){const[d,m,y]=st.split('/');return new Date(y,m-1,d);}return new Date(st);}
+function vibSameDay(a,b){const da=vibParseDate(a),db=vibParseDate(b);return da.getFullYear()===db.getFullYear()&&da.getMonth()===db.getMonth()&&da.getDate()===db.getDate();}
+function vibFormatFecha(s){if(!s)return'—';try{const d=vibParseDate(s);return isNaN(d)?String(s):d.toLocaleDateString('es-AR',{day:'2-digit',month:'2-digit',year:'numeric'});}catch{return String(s);}}
+function vibGetEstadoAcel(v){const n=parseFloat(v);if(isNaN(n))return'sin-dato';if(n>VIB_A_CRITICO)return'critico';if(n>VIB_A_ALERTA)return'alerta';if(n>VIB_A_INICIO)return'inicio';return'ok';}
+function vibGetEstadoVeloc(v){const n=parseFloat(v);if(isNaN(n))return'sin-dato';if(n>=VIB_V_PELIGRO)return'peligro';if(n>=VIB_V_ALERTA)return'alerta-v';return'ok';}
+function vibColorAcel(e){return{critico:'#dc2626',alerta:'#ca8a04',inicio:'#ea580c',ok:'#16a34a','sin-dato':'#9ca3af'}[e]||'#9ca3af';}
+function vibColorVeloc(e){return{peligro:'#dc2626','alerta-v':'#ca8a04',ok:'#2563eb','sin-dato':'#9ca3af'}[e]||'#9ca3af';}
+function vibDestroyChart(id){if(vibCharts[id]){vibCharts[id].destroy();delete vibCharts[id];}}
+
+function vibGetLastMedicion(tag){
+  const rows=vibAllData.filter(r=>r['Tag Equipo']===tag);
+  if(!rows.length)return{fecha:null,maxAcel:null,maxPunto:'—',estado:'sin-dato'};
+  const sorted=rows.slice().sort((a,b)=>vibParseDate(b['Fecha Medicion'])-vibParseDate(a['Fecha Medicion']));
+  const lf=sorted[0]['Fecha Medicion'];
+  const lr=rows.filter(r=>vibSameDay(r['Fecha Medicion'],lf));
+  const ar=lr.filter(r=>String(r['Punto medicion']||'').includes('Acel'));
+  const vals=ar.map(r=>parseFloat(r['Valor'])).filter(v=>!isNaN(v));
+  const mx=vals.length?Math.max(...vals):null;
+  const mr=ar.find(r=>parseFloat(r['Valor'])===mx);
+  return{fecha:lf,maxAcel:mx,maxPunto:mr?mr['Punto medicion']:'—',estado:mx!==null?vibGetEstadoAcel(mx):'sin-dato'};
+}
+
+async function vibLoadData(){
+  document.getElementById('vib-loading').style.display='flex';
+  document.querySelectorAll('.vib-view').forEach(v=>v.classList.remove('vib-active'));
+  try{
+    const r=await fetch(VIB_API+'?action=data');const data=await r.json();
+    const fechaLimite=new Date();fechaLimite.setFullYear(fechaLimite.getFullYear()-2);
+    vibAllData=Array.isArray(data)?data.filter(r=>{if(!r['Tag Equipo'])return false;const f=vibParseDate(r['Fecha Medicion']);return f>=fechaLimite;}):[];
+    if(!vibAllData.length)throw new Error('Sin datos');
+    vibInitFilters();vibRenderGeneral();vibRenderCarga();
+    document.getElementById('vib-loading').style.display='none';
+    document.getElementById('vib-page-general').classList.add('vib-active');
+    document.getElementById('vib-upd-time').textContent='⏱ '+new Date().toLocaleString('es-AR');
+    vibLoaded=true;
+  }catch(e){
+    document.getElementById('vib-loading').innerHTML='<div style="color:var(--red);font-size:13px;text-align:center;padding:30px">❌ '+e.message+'<br><br><button class="btn-accion guardar" onclick="vibLoadData()" style="padding:8px 16px">🔄 Reintentar</button></div>';
+  }
+}
+
+function vibInitFilters(){
+  const tags=[...new Set(vibAllData.map(r=>r['Tag Equipo']).filter(Boolean))].sort();
+  ['vib-fi-bomba','vib-c-bomba'].forEach(id=>{const s=document.getElementById(id);s.innerHTML='<option value="">— Seleccioná —</option>';tags.forEach(t=>s.innerHTML+=`<option value="${t}">${t}</option>`);});
+  const dia=document.getElementById('vib-c-dia');dia.innerHTML='';
+  for(let i=1;i<=31;i++)dia.innerHTML+=`<option value="${String(i).padStart(2,'0')}">${i}</option>`;
+  const hoy=new Date();dia.value=String(hoy.getDate()).padStart(2,'0');
+  document.getElementById('vib-c-mes').value=String(hoy.getMonth()+1).padStart(2,'0');
+  document.getElementById('vib-c-anio').value=String(hoy.getFullYear());
+}
+
+function vibOnBombaChange(){
+  const tag=document.getElementById('vib-fi-bomba').value;
+  const ff=document.getElementById('vib-fi-fecha');ff.innerHTML='<option value="">— Seleccioná —</option>';
+  if(!tag)return;
+  const fechasRaw=vibAllData.filter(r=>r['Tag Equipo']===tag).map(r=>r['Fecha Medicion']).filter(Boolean);
+  const fechasUnicas=[];const vistas=new Set();
+  fechasRaw.sort((a,b)=>vibParseDate(b)-vibParseDate(a)).forEach(f=>{const key=vibParseDate(f).toDateString();if(!vistas.has(key)){vistas.add(key);fechasUnicas.push(f);}});
+  fechasUnicas.forEach(f=>ff.innerHTML+=`<option value="${f}">${vibFormatFecha(f)}</option>`);
+  if(fechasUnicas.length){ff.value=fechasUnicas[0];vibRenderFicha();}
+}
+
+function vibIrFicha(tag){document.getElementById('vib-fi-bomba').value=tag;vibSwitchTab('ficha');vibOnBombaChange();}
+
+function vibRenderGeneral(){
+  const mostrar=document.getElementById('vib-f-estado').value;
+  const tags=[...new Set(vibAllData.map(r=>r['Tag Equipo']).filter(Boolean))].sort();
+  const bd=tags.map(tag=>({tag,...vibGetLastMedicion(tag)}));
+  const cnt={critico:0,alerta:0,inicio:0,ok:0};
+  bd.forEach(b=>{if(cnt[b.estado]!==undefined)cnt[b.estado]++;});
+  ['critico','alerta','inicio','ok'].forEach(k=>document.getElementById('vib-k-'+k).textContent=cnt[k]);
+  const filtradas=mostrar==='criticas'?bd.filter(b=>['critico','alerta','inicio'].includes(b.estado)).sort((a,b)=>(b.maxAcel||0)-(a.maxAcel||0)):bd.sort((a,b)=>(b.maxAcel||0)-(a.maxAcel||0));
+  document.getElementById('vib-grid-title').textContent=mostrar==='criticas'?'⚠️ Bombas que Requieren Atención':'🏭 Estado de Todas las Bombas';
+  const eL={critico:'🔴 CRÍTICO',alerta:'🟡 ALERTA',inicio:'🟠 INICIO',ok:'✅ OK','sin-dato':'—'};
+  document.getElementById('vib-bombas-grid').innerHTML=filtradas.length?filtradas.map(b=>`
+    <div class="bomba-card ${b.estado}" onclick="vibIrFicha('${b.tag}')">
+      <div class="bomba-tag">${b.tag}</div>
+      <div class="bomba-val">${b.maxAcel!==null?b.maxAcel.toFixed(2):'—'}<span style="font-size:.6rem">g</span></div>
+      <div class="bomba-pto">${b.maxPunto||'—'}</div>
+      <div class="bomba-estado">${eL[b.estado]||'—'}</div>
+      <div class="bomba-fecha">${vibFormatFecha(b.fecha)}</div>
+    </div>`).join(''):'<div class="no-data">✅ Todas en OK</div>';
+  const vd=tags.map(tag=>{
+    const rows=vibAllData.filter(r=>r['Tag Equipo']===tag);if(!rows.length)return null;
+    const sorted=rows.slice().sort((a,b)=>vibParseDate(b['Fecha Medicion'])-vibParseDate(a['Fecha Medicion']));
+    const lf=sorted[0]['Fecha Medicion'];const lr=rows.filter(r=>vibSameDay(r['Fecha Medicion'],lf));
+    const vr=lr.filter(r=>String(r['Punto medicion']||'').includes('Veloc'));
+    const vals=vr.map(r=>parseFloat(r['Valor'])).filter(v=>!isNaN(v));const mx=vals.length?Math.max(...vals):null;
+    const mr=vr.find(r=>parseFloat(r['Valor'])===mx);
+    return{tag,fecha:lf,maxVeloc:mx,maxPunto:mr?mr['Punto medicion']:'—'};
+  }).filter(b=>b&&b.maxVeloc!==null&&b.maxVeloc>10).sort((a,b)=>b.maxVeloc-a.maxVeloc);
+  document.getElementById('vib-bombas-veloc').innerHTML=vd.length?vd.map(b=>`
+    <div class="bomba-card" style="border-color:var(--blue);background:var(--blue-light)" onclick="vibIrFicha('${b.tag}')">
+      <div class="bomba-tag">${b.tag}</div>
+      <div class="bomba-val" style="color:var(--blue)">${b.maxVeloc.toFixed(2)}<span style="font-size:.6rem">mm/s</span></div>
+      <div class="bomba-pto">${b.maxPunto||'—'}</div>
+      <div class="bomba-estado" style="color:var(--blue)">⚡ VELOC ALTA</div>
+      <div class="bomba-fecha">${vibFormatFecha(b.fecha)}</div>
+    </div>`).join(''):'<div class="no-data">✅ Ninguna supera 10 mm/s</div>';
+  const rk=bd.filter(b=>b.maxAcel!==null).sort((a,b)=>b.maxAcel-a.maxAcel).slice(0,10);
+  const mx2=rk[0]?.maxAcel||1;
+  document.getElementById('vib-ranking').innerHTML=rk.map((b,i)=>`
+    <div class="rank-item">
+      <div class="rank-num">${i+1}</div>
+      <div class="rank-tag" title="${b.tag}">${b.tag}</div>
+      <div class="rank-bw"><div class="rank-b ${b.estado}" style="width:${b.maxAcel/mx2*100}%"><span>${b.maxAcel.toFixed(2)}g</span></div></div>
+    </div>`).join('');
+  vibDestroyChart('vib-ch-estado');
+  vibCharts['vib-ch-estado']=new Chart(document.getElementById('vib-ch-estado'),{
+    type:'doughnut',data:{labels:['OK','Inicio','Alerta','Crítico'],
+      datasets:[{data:[cnt.ok,cnt.inicio,cnt.alerta,cnt.critico],backgroundColor:['#16a34a','#ea580c','#ca8a04','#dc2626'],borderColor:'#ffffff',borderWidth:2}]},
+    options:{responsive:true,maintainAspectRatio:true,plugins:{legend:{position:'right',labels:{color:'#6b7280',font:{size:10},boxWidth:12,padding:6}}}}
+  });
+}
+
+function vibGetPuntoVal(rows,num){
+  const r=rows.find(r=>{const pm=String(r['Punto medicion']||'').trim();return pm.startsWith(num+' ')||pm.startsWith('0'+num.replace(/^0/,'')+' ')||pm===num;});
+  if(!r)return null;const v=parseFloat(r['Valor']);return isNaN(v)?null:v;
+}
+
+function vibRenderFicha(){
+  const tag=document.getElementById('vib-fi-bomba').value;
+  const fechaVal=document.getElementById('vib-fi-fecha').value;
+  const varF=document.getElementById('vib-fi-var').value;
+  const content=document.getElementById('vib-ficha-content');
+  if(!tag){content.innerHTML='<div class="no-data">Seleccioná una bomba.</div>';return;}
+  const rows=vibAllData.filter(r=>r['Tag Equipo']===tag);
+  const fechaRows=fechaVal?rows.filter(r=>vibSameDay(r['Fecha Medicion'],fechaVal)):[];
+  function getP(num){return vibGetPuntoVal(fechaRows,num);}
+  const fechas=[...new Set(rows.map(r=>vibParseDate(r['Fecha Medicion']).toDateString()))].sort((a,b)=>new Date(a)-new Date(b)).map(ds=>rows.find(r=>vibParseDate(r['Fecha Medicion']).toDateString()===ds)?.['Fecha Medicion']).filter(Boolean);
+  const allP=[...new Set(rows.map(r=>r['Punto medicion']).filter(Boolean))].sort();
+  const pA=allP.filter(p=>String(p).includes('Acel'));const pV=allP.filter(p=>String(p).includes('Veloc'));
+  const mkDS=pts=>pts.slice(0,12).map((pto,i)=>({label:pto,data:fechas.map(f=>{const r=rows.find(r=>vibSameDay(r['Fecha Medicion'],f)&&r['Punto medicion']===pto);if(!r)return null;const v=parseFloat(r['Valor']);return isNaN(v)?null:v;}),borderColor:VIB_CHART_COLORS[i%VIB_CHART_COLORS.length],backgroundColor:'transparent',tension:.3,pointRadius:3,borderWidth:2,spanGaps:true}));
+  const mkIso=pairs=>[{id:'iso'+Math.random(),afterDraw(chart){const{ctx,chartArea:{left,right,top,bottom},scales:{y}}=chart;pairs.forEach(([val,col,lbl])=>{const yp=y.getPixelForValue(val);if(yp>=top&&yp<=bottom){ctx.save();ctx.setLineDash([5,4]);ctx.strokeStyle=col;ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(left,yp);ctx.lineTo(right,yp);ctx.stroke();ctx.fillStyle=col;ctx.font='10px DM Sans';ctx.fillText(lbl,right-40,yp-4);ctx.restore();}});}}];
+  const mkChart=(id,ds,titulo,iso)=>{vibDestroyChart(id);vibCharts[id]=new Chart(document.getElementById(id),{type:'line',data:{labels:fechas.map(f=>vibFormatFecha(f)),datasets:ds},options:{responsive:true,maintainAspectRatio:true,plugins:{legend:{position:'bottom',labels:{color:'#6b7280',font:{size:9},boxWidth:10,padding:5}}},scales:{x:{ticks:{color:'#9ca3af',font:{size:9},maxRotation:45},grid:{color:'#f3f4f6'}},y:{ticks:{color:'#9ca3af',font:{size:10}},grid:{color:'#f3f4f6'},beginAtZero:true,title:{display:true,text:titulo,color:'#6b7280',font:{size:10}}}}},plugins:iso});};
+  const maxAcelActual=Math.max(...fechaRows.filter(r=>String(r['Punto medicion']||'').includes('Acel')).map(r=>parseFloat(r['Valor'])).filter(v=>!isNaN(v)),0);
+  const estadoActual=vibGetEstadoAcel(maxAcelActual||null);
+  content.innerHTML=`
+    <div class="vib-esquema-wrap">
+      <div style="font-size:14px;font-weight:700;color:var(--mod-accent)">${tag}</div>
+      <div style="font-size:12px;color:var(--text3);margin-top:2px">Medición: ${vibFormatFecha(fechaVal)} — Max Acel: <strong style="color:${vibColorAcel(estadoActual)}">${maxAcelActual?maxAcelActual.toFixed(2)+'g':'—'}</strong></div>
+    </div>
+    ${(varF==='ALL'||varF==='Acel')?`<div class="vib-card"><h3>Aceleración (g) — Tendencia Histórica</h3><canvas id="vib-ch-tend-acel" style="max-height:220px"></canvas></div>`:''}
+    ${(varF==='ALL'||varF==='Veloc')?`<div class="vib-card"><h3>Velocidad (mm/s) — Tendencia Histórica</h3><canvas id="vib-ch-tend-veloc" style="max-height:220px"></canvas></div>`:''}
+  `;
+  if(varF==='ALL'||varF==='Acel') mkChart('vib-ch-tend-acel',mkDS(pA),'Aceleración (g)',mkIso([[VIB_A_INICIO,'#ea580c','1.5g'],[VIB_A_ALERTA,'#ca8a04','2.5g'],[VIB_A_CRITICO,'#dc2626','5g']]));
+  if(varF==='ALL'||varF==='Veloc') mkChart('vib-ch-tend-veloc',mkDS(pV),'Velocidad (mm/s)',mkIso([[VIB_V_ALERTA,'#ca8a04','2.3'],[VIB_V_PELIGRO,'#dc2626','4.5']]));
+}
+
+// CARGA VIB
+let vibValoresCarga={},vibPuntoActivo=null;
+function vibRenderCarga(){
+  const cargados=Object.keys(vibValoresCarga).length;
+  const el=document.getElementById('vib-c-counter');
+  if(el)el.innerHTML=`<span style="color:${cargados===22?'var(--green)':'var(--blue)'}">${cargados}/22 cargados</span>`;
+  Object.entries(VIB_PUNTOS).forEach(([zonaId,pts])=>{
+    const container=document.getElementById(zonaId);if(!container)return;
+    container.innerHTML=pts.map(p=>{
+      const val=vibValoresCarga[p.num];
+      const est=val!==undefined?(p.tipo==='Acel'?vibGetEstadoAcel(val):vibGetEstadoVeloc(val)):'sin-dato';
+      const col=p.tipo==='Acel'?vibColorAcel(est):vibColorVeloc(est);
+      const txt=val!==undefined?parseFloat(val).toFixed(2):'—';
+      return`<div class="vib-pto" style="border-color:${col};background:${col}18;${val!==undefined?'box-shadow:0 0 8px '+col+'33':''}"
+        onclick="vibAbrirPopup('${p.num}','${p.tipo}',this)">
+        <span class="pn">${p.num}·${p.tipo==='Acel'?'A':'V'}</span>
+        <span class="pv" style="color:${col}">${txt}</span>
+      </div>`;
+    }).join('');
+  });
+}
+function vibAbrirPopup(num,tipo,el){
+  vibPuntoActivo={num,tipo};
+  document.getElementById('vib-vp-titulo').textContent=`Punto ${num}`;
+  document.getElementById('vib-vp-tipo').textContent=tipo==='Acel'?'⚡ Aceleración (g)':'🌊 Velocidad (mm/s)';
+  const inp=document.getElementById('vib-vp-input');inp.value=vibValoresCarga[num]!==undefined?vibValoresCarga[num]:'';
+  const popup=document.getElementById('vib-popup');popup.style.display='block';document.getElementById('vib-overlay').style.display='block';
+  const rect=el.getBoundingClientRect();const pw=220,ph=170;
+  let top=rect.bottom+window.scrollY+8,left=rect.left+window.scrollX+rect.width/2-pw/2;
+  if(rect.bottom+ph>window.innerHeight)top=rect.top+window.scrollY-ph-8;
+  if(left<8)left=8;if(left+pw>window.innerWidth-8)left=window.innerWidth-pw-8;
+  popup.style.top=top+'px';popup.style.left=left+'px';
+  setTimeout(()=>inp.focus(),50);
+}
+function vibConfirmarValor(){if(!vibPuntoActivo)return;const val=parseFloat(document.getElementById('vib-vp-input').value);if(!isNaN(val)&&val>=0){vibValoresCarga[vibPuntoActivo.num]=val;vibRenderCarga();}vibCerrarPopup();}
+function vibCerrarPopup(){document.getElementById('vib-popup').style.display='none';document.getElementById('vib-overlay').style.display='none';vibPuntoActivo=null;}
+function vibLimpiarCarga(){vibValoresCarga={};vibRenderCarga();document.getElementById('vib-carga-msg').textContent='';}
+async function vibGuardarCarga(){
+  const tag=document.getElementById('vib-c-bomba').value;
+  const dia=document.getElementById('vib-c-dia').value,mes=document.getElementById('vib-c-mes').value,anio=document.getElementById('vib-c-anio').value;
+  const op=document.getElementById('vib-c-operador').value.trim();
+  const velocBomba=document.getElementById('vib-c-veloc-bomba').value;
+  const msg=document.getElementById('vib-carga-msg');
+  if(!tag){msg.style.color='var(--red)';msg.textContent='❌ Seleccioná equipo';return;}
+  if(!op){msg.style.color='var(--red)';msg.textContent='❌ Ingresá operador';return;}
+  if(!Object.keys(vibValoresCarga).length){msg.style.color='var(--red)';msg.textContent='❌ Sin valores';return;}
+  const fechaStr=`${dia}/${mes}/${anio}`;
+  const zonaMap={'01':'MOTOR','02':'MOTOR','05':'MOTOR','06':'MOTOR','03':'BOMBA','04':'BOMBA','07':'BOMBA','08':'BOMBA','09':'MOTOR','10':'MOTOR','16':'MOTOR','17':'MOTOR','11':'MOTOR AX','12':'MOTOR AX','18':'MOTOR AX','19':'MOTOR AX','13':'BOMBA','14':'BOMBA','20':'BOMBA','21':'BOMBA','15':'VOLUTA','22':'VOLUTA'};
+  const filas=VIB_TODOS_PUNTOS.filter(p=>vibValoresCarga[p.num]!==undefined).map(p=>({'Tag Equipo':tag,'Fecha Medicion':fechaStr,'Operador':op,'Punto medicion':`${p.num} (${p.tipo}) ${zonaMap[p.num]||''}`,'Valor':vibValoresCarga[p.num],'Archivo Origen':'Dashboard Web','Velocidad Bomba':velocBomba||''}));
+  msg.style.color='var(--text3)';msg.textContent='Guardando...';
+  try{
+    const r=await fetch(VIB_API_POST,{method:'POST',body:JSON.stringify({filas})});const res=await r.json();
+    if(res.ok){msg.style.color='var(--green)';msg.textContent=`✅ ${res.guardadas} puntos guardados`;vibLimpiarCarga();setTimeout(()=>vibLoadData(),2000);}
+    else{msg.style.color='var(--red)';msg.textContent='❌ '+res.error;}
+  }catch(e){msg.style.color='var(--red)';msg.textContent='❌ Error de conexión';}
+}
+
+// vibLoadData se llama desde switchModule cuando mod==='vib'
+
+</script>
+</body>
+</html>

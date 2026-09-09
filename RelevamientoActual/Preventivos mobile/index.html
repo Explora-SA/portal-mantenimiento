@@ -1,0 +1,854 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#0d1117">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Preventivos">
+<title>Preventivos - EXPLORA</title>
+<script>
+const manifestData={name:"Preventivos EXPLORA",short_name:"Preventivos",description:"Carga de mantenimiento preventivo - Planta EXPLORA",start_url:".",display:"standalone",background_color:"#0d1117",theme_color:"#0d1117",orientation:"portrait",icons:[{src:"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'%3E%3Crect width='192' height='192' rx='24' fill='%230d1117'/%3E%3Ctext x='96' y='130' font-size='90' text-anchor='middle'%3E⚡%3C/text%3E%3C/svg%3E",sizes:"192x192",type:"image/svg+xml"}]};
+const blob=new Blob([JSON.stringify(manifestData)],{type:'application/json'});
+document.write('<link rel="manifest" href="'+URL.createObjectURL(blob)+'">');
+</script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{background:#0d1117;color:#e6edf3;font-family:'Segoe UI',sans-serif;min-height:100vh}
+
+/* HEADER */
+header{background:linear-gradient(135deg,#161b22,#1c2333);padding:10px 14px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #30363d;position:sticky;top:0;z-index:100}
+header h1{font-size:0.9rem;font-weight:700;color:#e6edf3}
+.sub{font-size:0.62rem;color:#8b949e;margin-bottom:2px}
+.hdr-right{font-size:0.65rem;color:#3fb950;font-weight:600}
+
+/* MODULE BAR */
+.mod-bar{display:flex;overflow-x:auto;background:#161b22;border-bottom:1px solid #21262d;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+.mod-bar::-webkit-scrollbar{display:none}
+.mod-btn{flex:0 0 auto;padding:10px 16px;font-size:0.78rem;font-weight:700;cursor:pointer;border:none;border-bottom:3px solid transparent;color:#8b949e;background:transparent;white-space:nowrap}
+.mod-btn.active{border-bottom-color:var(--accent);color:var(--accent)}
+:root{--accent:#f97316}
+
+/* MODULES */
+.module{display:none;padding:12px 14px;padding-bottom:80px}
+.module.active{display:block}
+
+/* FIELDS */
+.field{margin-bottom:12px}
+.field label{display:block;font-size:0.68rem;color:#8b949e;text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px;font-weight:600}
+.field select,.field input{width:100%;background:#21262d;border:1px solid #30363d;color:#e6edf3;padding:11px 14px;border-radius:8px;font-size:0.9rem;outline:none;min-height:46px;-webkit-appearance:none}
+.field select:focus,.field input:focus{border-color:var(--accent)}
+.field input::placeholder{color:#484f58}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px}
+.row3 select{padding:11px 6px;font-size:0.82rem}
+
+/* CARDS */
+.card{background:#161b22;border:1px solid #30363d;border-radius:10px;padding:12px;margin-bottom:12px}
+.card-title{font-size:0.78rem;font-weight:700;color:var(--accent);margin-bottom:10px;text-transform:uppercase;letter-spacing:.5px}
+
+/* TABLA MOTORES / INST */
+.motor-row{background:#1c2333;border:1px solid #21262d;border-radius:8px;padding:10px;margin-bottom:8px}
+.motor-tag{font-size:0.82rem;font-weight:700;color:#e6edf3;margin-bottom:8px;font-family:monospace}
+.insp-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.insp-item label{font-size:0.62rem;color:#8b949e;display:block;margin-bottom:3px}
+.insp-item select{width:100%;background:#21262d;border:1px solid #30363d;color:#e6edf3;padding:7px 8px;border-radius:6px;font-size:0.78rem;outline:none;-webkit-appearance:none}
+.insp-item select.val-ok{background:#1a3a1a;border-color:#3fb95066;color:#3fb950}
+.insp-item select.val-mal{background:#3a1a1a;border-color:#ea433566;color:#ea4335}
+.insp-item select.val-urg{background:#4a0f0f;border-color:#ea4335;color:#ff6b6b}
+.insp-item select.val-fs{background:#3a3000;border-color:#e3b34166;color:#e3b341}
+.insp-obs{margin-top:6px}
+.insp-obs input{width:100%;background:#21262d;border:1px solid #30363d;color:#e6edf3;padding:7px 8px;border-radius:6px;font-size:0.78rem;outline:none}
+
+/* GENERADOR / UPS items */
+.gen-item{background:#1c2333;border:1px solid #21262d;border-radius:8px;padding:10px;margin-bottom:8px}
+.gen-item label{font-size:0.75rem;color:#c9d1d9;display:block;margin-bottom:6px;font-weight:600}
+.gen-item input{width:100%;background:#21262d;border:1px solid #30363d;color:#e6edf3;padding:8px 10px;border-radius:6px;font-size:0.85rem;outline:none;margin-bottom:4px}
+.gen-obs{width:100%;background:#21262d;border:1px solid #30363d;color:#e6edf3;padding:7px 8px;border-radius:6px;font-size:0.78rem;outline:none}
+.gen-obs::placeholder{color:#484f58}
+
+/* UPS */
+.ups-section{background:#1c2333;border:1px solid #30363d;border-radius:10px;padding:12px;margin-bottom:12px}
+.ups-title{font-size:0.85rem;font-weight:700;color:#e11d48;margin-bottom:10px}
+
+/* TERMOGRAFIA */
+.tablero-block{background:#1c2333;border:1px solid #30363d;border-radius:10px;padding:12px;margin-bottom:12px}
+.tablero-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;gap:6px}
+.tablero-title{font-size:0.85rem;font-weight:700;color:#f97316}
+.tablero-sub{font-size:0.65rem;color:#8b949e;margin-top:2px}
+.tablero-actions{display:flex;gap:5px;flex-shrink:0}
+.btn-sm{padding:7px 10px;border-radius:7px;cursor:pointer;font-size:0.75rem;font-weight:700;border:none;min-height:36px}
+.btn-sm-orange{background:#f97316;color:#0d1117}
+.btn-sm-dark{background:#21262d;border:1px solid #30363d;color:#e6edf3}
+.btn-sm-dark.con-foto{border-color:#3fb950;color:#3fb950}
+.tab-msg{font-size:0.72rem;min-height:16px;margin-top:4px}
+.fase-row{background:#161b22;border:1px solid #21262d;border-radius:8px;padding:9px 10px;margin-bottom:6px}
+.fase-nombre{font-size:0.72rem;font-weight:600;color:#8b949e;text-transform:uppercase;margin-bottom:7px}
+.est-btns{display:flex;gap:5px}
+.est-btn{flex:1;padding:8px 2px;border-radius:8px;font-size:0.75rem;font-weight:700;cursor:pointer;border:2px solid transparent;opacity:.35;text-align:center;min-height:38px}
+.est-btn:active{transform:scale(0.94)}
+.est-btn.sel{opacity:1}
+.est-btn.AT{background:#3d1f1f;color:#f85149;border-color:#f85149}
+.est-btn.MT{background:#3d3000;color:#e3b341;border-color:#e3b341}
+.est-btn.BT{background:#1f4035;color:#3fb950;border-color:#3fb950}
+.est-btn.NA{background:#1a2f4a;color:#58a6ff;border-color:#58a6ff}
+.est-btn.PARADO{background:#21262d;color:#8b949e;border-color:#484f58}
+.foto-preview-mini{margin-top:6px;display:none;align-items:center;gap:8px}
+.foto-preview-mini img{max-height:60px;border-radius:6px;border:1px solid #30363d}
+.btn-quitar-mini{background:none;border:none;color:#f85149;font-size:0.7rem;cursor:pointer;text-decoration:underline}
+
+/* FOOTER FIJO */
+.sticky-footer{position:fixed;bottom:0;left:0;right:0;background:#0d1117;border-top:1px solid #21262d;padding:10px 14px;display:flex;gap:8px;z-index:50}
+.btn-limpiar{flex:1;background:#21262d;border:1px solid #30363d;color:#8b949e;padding:13px;border-radius:10px;cursor:pointer;font-size:0.85rem;min-height:48px}
+.btn-guardar{flex:2;background:var(--accent);border:none;color:#0d1117;padding:13px;border-radius:10px;cursor:pointer;font-size:0.88rem;font-weight:700;min-height:48px}
+.btn-guardar:active{transform:scale(0.97)}
+.btn-guardar-todo{flex:2;background:#238636;border:none;color:#fff;padding:13px;border-radius:10px;cursor:pointer;font-size:0.88rem;font-weight:700;min-height:48px}
+
+/* MSG */
+.msg-bar{font-size:0.8rem;text-align:center;padding:6px 14px;min-height:28px}
+
+/* LOADING */
+.loading{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px;gap:12px}
+.spinner{width:36px;height:36px;border:3px solid #30363d;border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.no-data{color:#8b949e;text-align:center;padding:24px;font-size:.82rem}
+.semana-info{background:#21262d;border:1px solid #30363d;border-radius:8px;padding:11px 14px;font-size:0.88rem;color:#8b5cf6;font-weight:700;min-height:46px;display:flex;align-items:center}
+
+/* INSTALL BANNER */
+.install-banner{display:none;background:#1c2333;border-bottom:1px solid #30363d;padding:8px 14px;align-items:center;justify-content:space-between;gap:8px}
+.install-banner.show{display:flex}
+.install-banner span{font-size:0.75rem;color:#e6edf3}
+.btn-install{background:var(--accent);border:none;color:#0d1117;padding:6px 12px;border-radius:6px;cursor:pointer;font-size:0.75rem;font-weight:700}
+.btn-install-close{background:none;border:none;color:#8b949e;cursor:pointer;font-size:1rem}
+</style>
+</head>
+<body>
+
+<header>
+  <div><div class="sub">PLANTA EXPLORA</div><h1>⚡ MANTENIMIENTO PREVENTIVO</h1></div>
+  <div class="hdr-right" id="hdr-time">—</div>
+</header>
+
+<div class="install-banner" id="install-banner">
+  <span>📲 Instalá esta app en tu celular</span>
+  <button class="btn-install" id="btn-install">Instalar</button>
+  <button class="btn-install-close" onclick="document.getElementById('install-banner').classList.remove('show')">✕</button>
+</div>
+
+<div class="mod-bar">
+  <button class="mod-btn active" onclick="switchMod('termo')" id="mbtn-termo">🌡️ Termografía</button>
+  <button class="mod-btn" onclick="switchMod('motores')" id="mbtn-motores">⚙️ Motores</button>
+  <button class="mod-btn" onclick="switchMod('inst')" id="mbtn-inst">🔧 Instrumentación</button>
+  <button class="mod-btn" onclick="switchMod('gen')" id="mbtn-gen">⚡ Generador</button>
+  <button class="mod-btn" onclick="switchMod('ups')" id="mbtn-ups">🔋 UPS</button>
+  <button class="mod-btn" onclick="switchMod('ilum')" id="mbtn-ilum">💡 Iluminación</button>
+</div>
+
+<!-- inputs foto ocultos -->
+<input type="file" id="foto-camara" accept="image/*" capture="environment" style="display:none">
+<input type="file" id="foto-archivo" accept="image/*" style="display:none">
+
+<!-- ══ TERMOGRAFÍA ══ -->
+<div class="module active" id="mod-termo">
+  <div class="field"><label>🏭 Sector</label>
+    <select id="t-sector" onchange="tOnSectorChange()"><option value="">— Seleccioná —</option></select></div>
+  <div class="field"><label>📅 Fecha</label>
+    <div class="row3">
+      <select id="t-dia"></select>
+      <select id="t-mes"><option value="01">Ene</option><option value="02">Feb</option><option value="03">Mar</option><option value="04">Abr</option><option value="05">May</option><option value="06">Jun</option><option value="07">Jul</option><option value="08">Ago</option><option value="09">Sep</option><option value="10">Oct</option><option value="11">Nov</option><option value="12">Dic</option></select>
+      <select id="t-anio"><option value="2024">2024</option><option value="2025">2025</option><option value="2026" selected>2026</option></select>
+    </div></div>
+  <div id="t-container"><div class="no-data">Seleccioná un sector.</div></div>
+  <div id="t-footer" style="display:none">
+    <div class="msg-bar" id="t-msg"></div>
+    <div class="sticky-footer">
+      <button class="btn-limpiar" onclick="tLimpiarTodo()">🗑️</button>
+      <button class="btn-guardar-todo" onclick="tGuardarTodo()">💾 Guardar todo</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ ILUMINACIÓN ══ -->
+<div class="module" id="mod-ilum">
+  <div class="field"><label>Ruta</label>
+    <select id="ilum-ruta" onchange="ilumCargarEquipos()">
+      <option value="">— Seleccioná —</option>
+      <option>Iluminación de Emergencia Producción PB</option>
+      <option>Iluminación de Emergencia Islas de Carga</option>
+      <option>ILUMINACION EMERGENCIA PRODUCCION P.A</option>
+      <option>Iluminación de Emergencia CCM Producción-Servicios-Glicerólisis-Generador</option>
+      <option>Iluminación Pañoles</option>
+      <option>Iluminación Edificios Producción</option>
+      <option>Iluminación Edificios Mantenimiento</option>
+      <option>Iluminación Edificios de Logística</option>
+      <option>Iluminación Edificios Administración</option>
+      <option>ILUMINACION CCM PRODUCCIÓN - SERVIC - GLICEROLISIS - GENERADOR</option>
+      <option>ILUMINACIÓN SERVICIOS</option>
+      <option>ILUMINACION PRODUCCION PLANTA BAJA</option>
+      <option>ILUMINACION PLANTA ALTA PRODUCCION</option>
+      <option>ILUMINACION PERIMETRALES</option>
+      <option>ILUMINACION PLAYA DE TANQUES</option>
+      <option>ILUMINACION ISLA DE CARGA</option>
+      <option>ILUMINACION GLICEROLISIS</option>
+      <option>ILUMINACION BALANZA</option>
+      <option>ILUMINACION AREA 40 y 50</option>
+      <option>ILUMINACION AREA 31 y 32</option>
+      <option>ILUMINACION GALPON DE QUIMICOS</option>
+    </select></div>
+  <div class="row2">
+    <div class="field"><label>Realizó</label><input id="ilum-realizo" placeholder="Nombre"></div>
+    <div class="field"><label>Fecha</label><input id="ilum-fecha" type="date"></div>
+  </div>
+  <div class="field"><label>OT N°</label><input id="ilum-ot" placeholder="Número de OT"></div>
+  <div id="ilum-container"><div class="no-data">Seleccioná una ruta.</div></div>
+  <div class="msg-bar" id="ilum-msg"></div>
+  <div class="sticky-footer">
+    <button class="btn-limpiar" onclick="ilumLimpiar()">🗑️</button>
+    <button class="btn-guardar" onclick="ilumGuardar()">💾 Guardar</button>
+  </div>
+</div>
+
+<!-- ══ MOTORES ══ -->
+<div class="module" id="mod-motores">
+  <div class="field"><label>Ruta</label>
+    <select id="m-ruta" onchange="mCargarMotores()">
+      <option value="">— Seleccioná —</option>
+      <option>Ruta 1</option><option>Ruta 2</option><option>Ruta 3</option><option>Ruta 4</option><option>Ruta 5</option><option>Ruta 6</option><option>Ruta 7</option><option>Ruta 8</option><option>Ruta 9</option><option>Ruta 10</option><option>Ruta 11</option><option>Ruta 12</option><option>Ruta 13</option>
+    </select></div>
+  <div class="row2">
+    <div class="field"><label>Realizó</label><input id="m-realizo" placeholder="Nombre"></div>
+    <div class="field"><label>Fecha</label><input id="m-fecha" type="date"></div>
+  </div>
+  <div class="field"><label>OT N°</label><input id="m-ot" placeholder="Número de OT"></div>
+  <div id="m-container"><div class="no-data">Seleccioná una ruta.</div></div>
+  <div class="msg-bar" id="m-msg"></div>
+  <div class="sticky-footer">
+    <button class="btn-limpiar" onclick="mLimpiar()">🗑️</button>
+    <button class="btn-guardar" onclick="mGuardar()">💾 Guardar</button>
+  </div>
+</div>
+
+<!-- ══ INSTRUMENTACIÓN ══ -->
+<div class="module" id="mod-inst">
+  <div class="field"><label>Ruta</label>
+    <select id="i-ruta" onchange="iCargarInstrumentos()">
+      <option value="">— Seleccioná —</option>
+      <option>Ruta 01</option><option>Ruta 02</option><option>Ruta 03</option><option>Ruta 04</option><option>Ruta 05</option><option>Ruta 06</option><option>Ruta 07</option><option>Ruta 08</option><option>Ruta 09</option><option>Ruta 10</option><option>Ruta 11</option><option>Ruta 12</option><option>Ruta 13</option><option>Ruta 14</option><option>Ruta 15</option><option>Ruta 16</option><option>Ruta 17</option><option>Ruta 18</option><option>Ruta 19</option><option>Ruta 20</option><option>Ruta 21</option><option>Ruta 22</option>
+    </select></div>
+  <div class="row2">
+    <div class="field"><label>Realizó</label><input id="i-realizo" placeholder="Nombre"></div>
+    <div class="field"><label>Fecha</label><input id="i-fecha" type="date"></div>
+  </div>
+  <div class="field"><label>OT N°</label><input id="i-ot" placeholder="Número de OT"></div>
+  <div id="i-container"><div class="no-data">Seleccioná una ruta.</div></div>
+  <div class="msg-bar" id="i-msg"></div>
+  <div class="sticky-footer">
+    <button class="btn-limpiar" onclick="iLimpiar()">🗑️</button>
+    <button class="btn-guardar" onclick="iGuardar()">💾 Guardar</button>
+  </div>
+</div>
+
+<!-- ══ GENERADOR ══ -->
+<div class="module" id="mod-gen">
+  <div class="row2">
+    <div class="field"><label>Fecha</label><input id="g-fecha" type="date" onchange="gAutoSemana()"></div>
+    <div class="field"><label>Ejecutante</label><input id="g-ejecutante" placeholder="Nombre"></div>
+  </div>
+  <div class="field"><label>Semana calculada</label><div class="semana-info" id="g-semana-info">— seleccioná una fecha</div></div>
+  <div id="g-container"><div class="no-data">Completá fecha y ejecutante.</div></div>
+  <div class="msg-bar" id="g-msg"></div>
+  <div class="sticky-footer">
+    <button class="btn-limpiar" onclick="gLimpiar()">🗑️</button>
+    <button class="btn-guardar" onclick="gGuardar()">💾 Guardar</button>
+  </div>
+</div>
+
+<!-- ══ UPS ══ -->
+<div class="module" id="mod-ups">
+  <div class="row2">
+    <div class="field"><label>Fecha</label><input id="u-fecha" type="date"></div>
+    <div class="field"><label>Ejecutante</label><input id="u-ejecutante" placeholder="Nombre"></div>
+  </div>
+  <div id="u-container"><div class="no-data">Completá fecha y ejecutante.</div></div>
+  <div class="msg-bar" id="u-msg"></div>
+  <div class="sticky-footer">
+    <button class="btn-limpiar" onclick="uLimpiar()">🗑️</button>
+    <button class="btn-guardar" onclick="uGuardar()">💾 Guardar</button>
+  </div>
+</div>
+
+<script>
+// ══ URLs ══
+const URL_TERMO  = "https://script.google.com/macros/s/AKfycbyYwTE2rwciQTH-zRX1XIr1uY-0jydP-QzScSqypY0zGuNMkxtOyDN2dumJcwxTbVa8/exec";
+const URL_MOTORES= "https://script.google.com/macros/s/AKfycbyQFDz8Iu-d8VbcvFA1oDD4bJSUZcxk9UBQmNoaeIfFZPhhCgjY8TfcU23qwc3LCNO4NA/exec";
+const URL_INST   = "https://script.google.com/macros/s/AKfycbzeTpVTJLQsTPz7rliOTCCGe93aoTJWuc0hLq9n--H0CQmFsBqEvvA5iAARJ9aZbfal/exec";
+const URL_GEN    = "https://script.google.com/macros/s/AKfycbzXtAdtux9Cak7OXdl9MWb5m7c0CG2PeEmfIY99xJhWLX4cnG0OLet59Z3k-aS0hmBDsQ/exec";
+const URL_UPS    = "https://script.google.com/macros/s/AKfycbwzyC0PKWOEQ9zvO6AJEzqYoilsQaW7gAJthjaYcENpHWywi0Vb6PfKaqy5GHtRGd__/exec";
+
+const MESES_ES = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
+
+// ══ PWA ══
+let deferredPrompt=null;
+window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferredPrompt=e;document.getElementById('install-banner').classList.add('show');});
+document.getElementById('btn-install').addEventListener('click',async()=>{if(!deferredPrompt)return;deferredPrompt.prompt();await deferredPrompt.userChoice;deferredPrompt=null;document.getElementById('install-banner').classList.remove('show');});
+
+// ══ Reloj ══
+setInterval(()=>document.getElementById('hdr-time').textContent=new Date().toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'}),1000);
+
+// ══ Switch módulo ══
+const modAccents={termo:'#f97316',motores:'#22c55e',inst:'#38bdf8',gen:'#8b5cf6',ups:'#e11d48',ilum:'#ca8a04'};
+function switchMod(mod){
+  document.querySelectorAll('.module').forEach(m=>m.classList.remove('active'));
+  document.querySelectorAll('.mod-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('mod-'+mod).classList.add('active');
+  document.getElementById('mbtn-'+mod).classList.add('active');
+  document.documentElement.style.setProperty('--accent',modAccents[mod]);
+  // Cargar datos si es primera vez
+  if(mod==='ups' && !uCargado) uRenderTabla();
+  if(mod==='gen' && !gCargado) gRenderTabla();
+}
+
+function colorSelect(sel){
+  sel.className='';
+  const v=sel.value.toUpperCase();
+  if(v==='OK')sel.className='val-ok';
+  else if(v==='MAL')sel.className='val-mal';
+  else if(v==='URG')sel.className='val-urg';
+  else if(v==='F/S')sel.className='val-fs';
+}
+
+// ════════════════════════════════════
+// TERMOGRAFÍA
+// ════════════════════════════════════
+let tSectoresData={}, tCargaEstado={}, tOrdenTags=[], tFotoTagActual=null;
+const T_ESTADOS=['BT','MT','AT','N/A','PARADO'];
+const T_CLS={BT:'BT',MT:'MT',AT:'AT','N/A':'NA',PARADO:'PARADO'};
+
+// Foto
+document.getElementById('foto-camara').addEventListener('change',function(){tOnFoto(this);});
+document.getElementById('foto-archivo').addEventListener('change',function(){tOnFoto(this);});
+function tAbrirCamara(tag){tFotoTagActual=tag;document.getElementById('foto-camara').click();}
+function tAbrirArchivo(tag){tFotoTagActual=tag;document.getElementById('foto-archivo').click();}
+function tOnFoto(input){
+  const file=input.files[0];if(!file||!tFotoTagActual)return;
+  const tag=tFotoTagActual;
+  const reader=new FileReader();
+  reader.onload=e=>{tCargaEstado[tag].fotoBase64=e.target.result.split(',')[1];tCargaEstado[tag].fotoNombre=file.name;tCargaEstado[tag].fotoMime=file.type;tRender();};
+  reader.readAsDataURL(file);input.value='';tFotoTagActual=null;
+}
+function tQuitarFoto(tag){tCargaEstado[tag].fotoBase64=null;tCargaEstado[tag].fotoNombre=null;tCargaEstado[tag].fotoMime=null;tRender();}
+
+async function tLoadSectores(){
+  try{
+    const r=await fetch(URL_TERMO+'?action=tags');
+    const data=await r.json();
+    tSectoresData={};
+    data.forEach(({sector,tag})=>{if(!tSectoresData[sector])tSectoresData[sector]=[];if(!tSectoresData[sector].includes(tag))tSectoresData[sector].push(tag);});
+    const ss=document.getElementById('t-sector');
+    Object.keys(tSectoresData).sort().forEach(s=>ss.innerHTML+=`<option value="${s}">${s}</option>`);
+    const dia=document.getElementById('t-dia');
+    for(let i=1;i<=31;i++)dia.innerHTML+=`<option value="${String(i).padStart(2,'0')}">${i}</option>`;
+    const hoy=new Date();
+    dia.value=String(hoy.getDate()).padStart(2,'0');
+    document.getElementById('t-mes').value=String(hoy.getMonth()+1).padStart(2,'0');
+    // Restaurar sector activo si había uno guardado
+    const sectorGuardado=localStorage.getItem('termo_sector_activo');
+    if(sectorGuardado){
+      const sel=document.getElementById('t-sector');
+      if([...sel.options].some(o=>o.value===sectorGuardado)){
+        sel.value=sectorGuardado;
+        await tOnSectorChange();
+      }
+    }
+  }catch(e){document.getElementById('t-container').innerHTML=`<div class="no-data">❌ Error cargando sectores</div>`;}
+}
+
+async function tOnSectorChange(){
+  const sector=document.getElementById('t-sector').value;
+  const sectorAnterior=localStorage.getItem('termo_sector_activo')||'';
+  if(sectorAnterior && sectorAnterior!==sector){tClearLocal(sectorAnterior);}
+  tCargaEstado={};
+  tOrdenTags=[];
+  if(sector)localStorage.setItem('termo_sector_activo',sector);
+  const container=document.getElementById('t-container');
+  const footer=document.getElementById('t-footer');
+  document.getElementById('t-msg').textContent='';
+  if(!sector){container.innerHTML='<div class="no-data">Seleccioná un sector.</div>';footer.style.display='none';return;}
+  const tags=(tSectoresData[sector]||[]).slice();
+  tOrdenTags=tags.slice();
+  if(!tags.length){container.innerHTML='<div class="no-data">Sin tableros.</div>';footer.style.display='none';return;}
+  container.innerHTML='<div class="loading"><div class="spinner"></div><div style="color:#8b949e;font-size:.82rem">Cargando fases...</div></div>';
+  await Promise.all(tags.map(async tag=>{
+    try{const r=await fetch(URL_TERMO+'?action=fases&tag='+encodeURIComponent(tag));const fases=await r.json();tCargaEstado[tag]={fases,valores:{},observacion:'',fotoBase64:null,fotoNombre:null,fotoMime:null};}
+    catch(e){tCargaEstado[tag]={fases:[],valores:{},fotoBase64:null,fotoNombre:null,fotoMime:null};}
+  }));
+  tLoadLocal();
+  tRender();
+  footer.style.display='block';
+}
+
+function tRender(){
+  const container=document.getElementById('t-container');
+  const tags=tOrdenTags.length?tOrdenTags:Object.keys(tCargaEstado);
+  container.innerHTML=tags.map(tag=>{
+    const {fases,valores,fotoBase64,fotoNombre}=tCargaEstado[tag];
+    const cargados=Object.keys(valores).length;
+    const tagId=tag.replace(/[^a-zA-Z0-9]/g,'_');
+    const fotoPreview=fotoBase64?`<div class="foto-preview-mini" style="display:flex"><img src="data:image/jpeg;base64,${fotoBase64}"><div><div style="font-size:.65rem;color:#c9d1d9">${fotoNombre}</div><button class="btn-quitar-mini" onclick="tQuitarFoto('${tag}')">✕ Quitar</button></div></div>`:'';
+    const obsVal=(tCargaEstado[tag].observacion||'').replace(/'/g,"&#39;");
+    const obsHtml=`<div style="margin-top:8px"><input type="text" placeholder="Observación..." value="${obsVal}" onchange="tSetObs('${tag}',this.value)" style="width:100%;background:#21262d;border:1px solid #30363d;color:#e6edf3;padding:8px 10px;border-radius:7px;font-size:0.82rem;outline:none"></div>`;
+    const fasesHtml=fases.length?`<div style="margin-top:8px">${fases.map(fase=>{const sel=valores[fase]||null;return`<div class="fase-row"><div class="fase-nombre">${fase}</div><div class="est-btns">${T_ESTADOS.map(e=>`<button class="est-btn ${T_CLS[e]}${sel===e?' sel':''}" onclick="tSetFase('${tag}','${fase}','${e}')">${e}</button>`).join('')}</div></div>`;}).join('')}</div>`:'<div class="no-data" style="padding:8px;font-size:.78rem">Sin fases.</div>';
+    if(tCargaEstado[tag]&&tCargaEstado[tag].guardado){
+      return`<div class="tablero-block" style="opacity:.5;background:#1a3a1a;border-color:#3fb95066"><div class="tablero-header"><div><div class="tablero-title" style="color:#3fb950">✅ ${tag} — Guardado</div></div><div class="tablero-actions"><button class="btn-sm btn-sm-dark" onclick="tDescolapsar('${tag}')">↩</button></div></div></div>`;
+    }
+    return`<div class="tablero-block"><div class="tablero-header"><div><div class="tablero-title">⚡ ${tag}</div><div class="tablero-sub">${cargados}/${fases.length} fases</div></div><div class="tablero-actions"><button class="btn-sm btn-sm-dark" onclick="tLimpiarTablero('${tag}')">🗑</button><button class="btn-sm btn-sm-dark ${fotoBase64?'con-foto':''}" onclick="tAbrirCamara('${tag}')">📷</button><button class="btn-sm btn-sm-dark ${fotoBase64?'con-foto':''}" onclick="tAbrirArchivo('${tag}')">📎</button><button class="btn-sm btn-sm-orange" onclick="tGuardarTablero('${tag}')">💾</button></div></div><div class="tab-msg" id="tmsg-${tagId}"></div>${fotoPreview}${obsHtml}${fasesHtml}</div>`;
+  }).join('');
+}
+
+function tSetObs(tag,val){if(tCargaEstado[tag])tCargaEstado[tag].observacion=val;tSaveLocal();}
+function tSetFase(tag,fase,estado){
+  if(!tCargaEstado[tag])return;
+  if(estado==='PARADO'){
+    (tCargaEstado[tag].fases||[]).forEach(function(f){tCargaEstado[tag].valores[f]='PARADO';});
+  } else {
+    tCargaEstado[tag].valores[fase]=estado;
+  }
+  tRender();
+}
+
+function tGetFecha(){return document.getElementById('t-dia').value+'/'+document.getElementById('t-mes').value+'/'+document.getElementById('t-anio').value;}
+
+async function tGuardarTablero(tag){
+  const sector=document.getElementById('t-sector').value;
+  const tagId=tag.replace(/[^a-zA-Z0-9]/g,'_');
+  const msgEl=document.getElementById('tmsg-'+tagId);
+  const est=tCargaEstado[tag];
+  if(!Object.keys(est.valores).length){msgEl.style.color='#f85149';msgEl.textContent='❌ Sin fases';return;}
+  const fila={FECHA:tGetFecha(),SECTOR:sector,TAG:tag,...est.valores,OBSERVACIONES:est.observacion||''};
+  if(est.fotoBase64){fila._fotoBase64=est.fotoBase64;fila._fotoNombre=est.fotoNombre;fila._fotoMime=est.fotoMime;}
+  msgEl.style.color='#8b949e';msgEl.textContent='Guardando...';
+  try{
+    const r=await fetch(URL_TERMO,{method:'POST',body:JSON.stringify({filas:[fila]})});
+    const res=await r.json();
+    if(res.ok){msgEl.style.color='#3fb950';msgEl.textContent='✅ Guardado';tCargaEstado[tag].valores={};tCargaEstado[tag].fotoBase64=null;tCargaEstado[tag].fotoNombre=null;tCargaEstado[tag].fotoMime=null;tCargaEstado[tag].guardado=true;tSaveLocal();tRender();}
+    else{msgEl.style.color='#f85149';msgEl.textContent='❌ '+res.error;}
+  }catch(e){msgEl.style.color='#f85149';msgEl.textContent='❌ Error';}
+}
+
+async function tGuardarTodo(){
+  const sector=document.getElementById('t-sector').value;
+  const msg=document.getElementById('t-msg');
+  const tags=Object.keys(tCargaEstado).filter(tag=>Object.keys(tCargaEstado[tag].valores).length>0);
+  if(!tags.length){msg.style.color='#f85149';msg.textContent='❌ Sin fases cargadas';return;}
+  const filas=tags.map(tag=>{const est=tCargaEstado[tag];const fila={FECHA:tGetFecha(),SECTOR:sector,TAG:tag,...est.valores,OBSERVACIONES:est.observacion||''};if(est.fotoBase64){fila._fotoBase64=est.fotoBase64;fila._fotoNombre=est.fotoNombre;fila._fotoMime=est.fotoMime;}return fila;});
+  msg.style.color='#8b949e';msg.textContent=`Guardando ${filas.length} tableros...`;
+  try{
+    const r=await fetch(URL_TERMO,{method:'POST',body:JSON.stringify({filas})});
+    const res=await r.json();
+    if(res.ok){msg.style.color='#3fb950';msg.textContent=`✅ ${res.guardadas} guardados`;tags.forEach(tag=>{tCargaEstado[tag].valores={};tCargaEstado[tag].fotoBase64=null;tCargaEstado[tag].fotoNombre=null;tCargaEstado[tag].fotoMime=null;});tRender();}
+    else{msg.style.color='#f85149';msg.textContent='❌ '+res.error;}
+  }catch(e){msg.style.color='#f85149';msg.textContent='❌ Error';}
+}
+
+function tDescolapsar(tag){if(tCargaEstado[tag])tCargaEstado[tag].guardado=false;tSaveLocal();tRender();}
+function tLimpiarTablero(tag){if(!tCargaEstado[tag])return;tCargaEstado[tag].valores={};tCargaEstado[tag].fotoBase64=null;tCargaEstado[tag].fotoNombre=null;tCargaEstado[tag].fotoMime=null;tCargaEstado[tag].observacion='';tCargaEstado[tag].guardado=false;tSaveLocal();tRender();}
+function tLimpiarTodo(){Object.keys(tCargaEstado).forEach(tag=>{tCargaEstado[tag].valores={};tCargaEstado[tag].fotoBase64=null;tCargaEstado[tag].fotoNombre=null;tCargaEstado[tag].fotoMime=null;});document.getElementById('t-msg').textContent='';tSaveLocal();tRender();}
+
+// ════════════════════════════════════
+// MOTORES
+// ════════════════════════════════════
+const M_COLS=[{key:"cubierta_goma",label:"Cubierta Goma"},{key:"pulsadores",label:"Pulsadores"},{key:"nmotor",label:"N° Motor"},{key:"acom_motor",label:"Acom. Motor"},{key:"acom_caja",label:"Acom. Caja"},{key:"sell_fm",label:"Sell. FM"},{key:"sell_cmd",label:"Sell. Cmd"},{key:"pasta_fm",label:"Pasta FM"},{key:"pasta_cmd",label:"Pasta Cmd"},{key:"pat",label:"PAT"},{key:"limp_carcasa",label:"Limp. Carcasa"},{key:"vent_estado",label:"Vent. Estado"},{key:"vent_limpieza",label:"Vent. Limpieza"}];
+let mMotoresCarga=[];
+
+async function mCargarMotores(){
+  const ruta=document.getElementById('m-ruta').value;
+  const container=document.getElementById('m-container');
+  if(!ruta){container.innerHTML='<div class="no-data">Seleccioná una ruta.</div>';return;}
+  container.innerHTML='<div class="loading"><div class="spinner"></div><div style="color:#8b949e;font-size:.82rem">Cargando motores...</div></div>';
+  try{
+    const r=await fetch(URL_MOTORES+'?action=detalle&ruta='+encodeURIComponent(ruta));
+    const data=await r.json();
+    mMotoresCarga=(data.motores||[]).map(m=>({tag:m.tag,nmotor:m.nmotor}));
+    mRenderMotores();
+  }catch(e){container.innerHTML=`<div class="no-data">❌ Error cargando motores</div>`;}
+}
+
+function mRenderMotores(){
+  const container=document.getElementById('m-container');
+  if(!mMotoresCarga.length){container.innerHTML='<div class="no-data">Sin motores.</div>';return;}
+  const opts=['','OK','MAL','URG','N/A','F/S'].map(v=>`<option value="${v}">${v||'--'}</option>`).join('');
+  container.innerHTML=mMotoresCarga.map((m,i)=>`
+    <div class="motor-row">
+      <div class="motor-tag">${m.tag}</div>
+      <div class="insp-grid">
+        <div class="insp-item"><label>N° Motor</label><input id="m_nm_${i}" value="${m.nmotor||''}" placeholder="N°" style="background:#21262d;border:1px solid #30363d;color:#e6edf3;padding:7px 8px;border-radius:6px;font-size:0.78rem;outline:none;width:100%"></div>
+        ${M_COLS.filter(c=>c.key!=='nmotor').map(c=>`<div class="insp-item"><label>${c.label}</label><select id="m_${c.key}_${i}" onchange="colorSelect(this)">${opts}</select></div>`).join('')}
+      </div>
+      <div class="insp-obs"><input id="m_obs_${i}" placeholder="Observaciones..." style="background:#21262d;border:1px solid #30363d;color:#e6edf3;padding:7px 8px;border-radius:6px;font-size:0.78rem;outline:none;width:100%"></div>
+    </div>`).join('');
+}
+
+async function mGuardar(){
+  const ruta=document.getElementById('m-ruta').value;
+  const realizo=document.getElementById('m-realizo').value.trim();
+  const fecha=document.getElementById('m-fecha').value;
+  const ot=document.getElementById('m-ot').value.trim();
+  const msg=document.getElementById('m-msg');
+  if(!ruta||!realizo||!fecha){msg.style.color='#f85149';msg.textContent='❌ Completá ruta, realizó y fecha';return;}
+  if(!mMotoresCarga.length){msg.style.color='#f85149';msg.textContent='❌ Sin motores cargados';return;}
+  const motores=mMotoresCarga.map((m,i)=>{
+    const obj={tag:m.tag,nmotor:document.getElementById('m_nm_'+i).value.trim()};
+    M_COLS.filter(c=>c.key!=='nmotor').forEach(c=>{obj[c.key]=document.getElementById('m_'+c.key+'_'+i).value;});
+    obj.observaciones=document.getElementById('m_obs_'+i).value.trim();
+    return obj;
+  });
+  msg.style.color='#8b949e';msg.textContent='Guardando...';
+  try{
+    const r=await fetch(URL_MOTORES,{method:'POST',body:JSON.stringify({action:'guardar',ruta,realizado:realizo,fecha,ot,motores})});
+    const res=await r.json();
+    if(res.ok){msg.style.color='#3fb950';msg.textContent='✅ Guardado en "'+res.hoja+'"';}
+    else{msg.style.color='#f85149';msg.textContent='❌ '+res.error;}
+  }catch(e){msg.style.color='#f85149';msg.textContent='❌ Error de conexión';}
+}
+
+function mLimpiar(){document.getElementById('m-ruta').value='';document.getElementById('m-realizo').value='';document.getElementById('m-fecha').value='';document.getElementById('m-ot').value='';document.getElementById('m-container').innerHTML='<div class="no-data">Seleccioná una ruta.</div>';document.getElementById('m-msg').textContent='';mMotoresCarga=[];}
+
+// ════════════════════════════════════
+// INSTRUMENTACIÓN
+// ════════════════════════════════════
+const I_COLS=[{key:"limpieza",label:"Limpieza"},{key:"acometida",label:"Acometida"},{key:"perdida_aire",label:"Pérd. Aire"},{key:"perdida_producto",label:"Pérd. Producto"}];
+let iInstCarga=[];
+
+async function iCargarInstrumentos(){
+  const ruta=document.getElementById('i-ruta').value;
+  const container=document.getElementById('i-container');
+  if(!ruta){container.innerHTML='<div class="no-data">Seleccioná una ruta.</div>';return;}
+  container.innerHTML='<div class="loading"><div class="spinner"></div><div style="color:#8b949e;font-size:.82rem">Cargando instrumentos...</div></div>';
+  try{
+    const r=await fetch(URL_INST+'?action=detalle&ruta='+encodeURIComponent(ruta));
+    const data=await r.json();
+    iInstCarga=(data.instrumentos||[]).map(inst=>({tag:inst.tag,especificacion:inst.especificacion,marca:inst.marca,modelo:inst.modelo}));
+    iRenderInstrumentos();
+  }catch(e){container.innerHTML=`<div class="no-data">❌ Error cargando instrumentos</div>`;}
+}
+
+function iRenderInstrumentos(){
+  const container=document.getElementById('i-container');
+  if(!iInstCarga.length){container.innerHTML='<div class="no-data">Sin instrumentos.</div>';return;}
+  const opts=['','OK','MAL','URG','N/A','F/S'].map(v=>`<option value="${v}">${v||'--'}</option>`).join('');
+  container.innerHTML=iInstCarga.map((inst,i)=>`
+    <div class="motor-row">
+      <div class="motor-tag">${inst.tag}</div>
+      ${inst.especificacion?`<div style="font-size:.72rem;color:#8b949e;margin-bottom:6px">${inst.especificacion}</div>`:''}
+      <div class="insp-grid">
+        ${I_COLS.map(c=>`<div class="insp-item"><label>${c.label}</label><select id="i_${c.key}_${i}" onchange="colorSelect(this)">${opts}</select></div>`).join('')}
+        <div class="insp-item"><label>Marca</label><input id="i_marca_${i}" value="${inst.marca||''}" style="background:#21262d;border:1px solid #30363d;color:#e6edf3;padding:7px 8px;border-radius:6px;font-size:0.78rem;outline:none;width:100%"></div>
+        <div class="insp-item"><label>Modelo</label><input id="i_modelo_${i}" value="${inst.modelo||''}" style="background:#21262d;border:1px solid #30363d;color:#e6edf3;padding:7px 8px;border-radius:6px;font-size:0.78rem;outline:none;width:100%"></div>
+      </div>
+      <div class="insp-obs"><input id="i_obs_${i}" placeholder="Observaciones..." style="background:#21262d;border:1px solid #30363d;color:#e6edf3;padding:7px 8px;border-radius:6px;font-size:0.78rem;outline:none;width:100%"></div>
+    </div>`).join('');
+}
+
+async function iGuardar(){
+  const ruta=document.getElementById('i-ruta').value;
+  const realizo=document.getElementById('i-realizo').value.trim();
+  const fecha=document.getElementById('i-fecha').value;
+  const ot=document.getElementById('i-ot').value.trim();
+  const msg=document.getElementById('i-msg');
+  if(!ruta||!realizo||!fecha){msg.style.color='#f85149';msg.textContent='❌ Completá ruta, realizó y fecha';return;}
+  if(!iInstCarga.length){msg.style.color='#f85149';msg.textContent='❌ Sin instrumentos cargados';return;}
+  const instrumentos=iInstCarga.map((inst,i)=>{
+    const obj={tag:inst.tag,especificacion:inst.especificacion||'',marca:document.getElementById('i_marca_'+i).value.trim(),modelo:document.getElementById('i_modelo_'+i).value.trim(),observaciones:document.getElementById('i_obs_'+i).value.trim()};
+    I_COLS.forEach(c=>{obj[c.key]=document.getElementById('i_'+c.key+'_'+i).value;});
+    return obj;
+  });
+  msg.style.color='#8b949e';msg.textContent='Guardando...';
+  try{
+    const r=await fetch(URL_INST,{method:'POST',body:JSON.stringify({action:'guardar',ruta,realizado:realizo,fecha,ot,instrumentos})});
+    const res=await r.json();
+    if(res.ok){msg.style.color='#3fb950';msg.textContent='✅ Guardado en "'+res.hoja+'"';}
+    else{msg.style.color='#f85149';msg.textContent='❌ '+res.error;}
+  }catch(e){msg.style.color='#f85149';msg.textContent='❌ Error de conexión';}
+}
+
+function iLimpiar(){document.getElementById('i-ruta').value='';document.getElementById('i-realizo').value='';document.getElementById('i-fecha').value='';document.getElementById('i-ot').value='';document.getElementById('i-container').innerHTML='<div class="no-data">Seleccioná una ruta.</div>';document.getElementById('i-msg').textContent='';iInstCarga=[];}
+
+// ════════════════════════════════════
+// GENERADOR
+// ════════════════════════════════════
+const G_ITEMS=["Nivel Aceite","Nivel Refrigerante","Nivel agua destilada Batería norte","Nivel agua destilada Batería sur","Limpieza bornes baterías norte","Limpieza bornes baterías sur","Tensión baterías norte","Tensión baterías sur","Horas de funcionamiento","Concentración de ácido","Estado correas","Estado radiador","Filtros de aire","Pérdidas de aceite","Pérdidas de refrigerante","Pérdidas de combustible","Limpieza general"];
+let gCargado=false;
+
+function gGetSemana(dia){if(dia<=7)return 1;if(dia<=14)return 2;if(dia<=21)return 3;if(dia<=28)return 4;return 5;}
+
+function gAutoSemana(){
+  const fechaStr=document.getElementById('g-fecha').value;
+  const info=document.getElementById('g-semana-info');
+  if(!fechaStr){info.textContent='— seleccioná una fecha';return;}
+  const fecha=new Date(fechaStr+'T12:00:00');
+  info.textContent='Semana '+gGetSemana(fecha.getDate())+' — '+MESES_ES[fecha.getMonth()]+' '+fecha.getFullYear();
+  if(!gCargado){gRenderTabla();gCargado=true;}
+}
+
+function gRenderTabla(){
+  document.getElementById('g-container').innerHTML=G_ITEMS.map((item,i)=>`
+    <div class="gen-item">
+      <label>${item}</label>
+      <input id="g_est_${i}" placeholder="valor / estado...">
+      <input id="g_obs_${i}" placeholder="Observaciones..." class="gen-obs">
+    </div>`).join('');
+  gCargado=true;
+}
+
+async function gGuardar(){
+  const fecha=document.getElementById('g-fecha').value;
+  const ejecutante=document.getElementById('g-ejecutante').value.trim();
+  const msg=document.getElementById('g-msg');
+  if(!fecha||!ejecutante){msg.style.color='#f85149';msg.textContent='❌ Completá fecha y ejecutante';return;}
+  const fechaObj=new Date(fecha+'T12:00:00');
+  const hoja=MESES_ES[fechaObj.getMonth()]+' '+fechaObj.getFullYear();
+  const semana=gGetSemana(fechaObj.getDate());
+  const items=G_ITEMS.map((nombre,i)=>({nombre,estado:document.getElementById('g_est_'+i)?document.getElementById('g_est_'+i).value.trim():'',observaciones:document.getElementById('g_obs_'+i)?document.getElementById('g_obs_'+i).value.trim():''}));
+  const obsGen='';
+  msg.style.color='#8b949e';msg.textContent='Guardando...';
+  try{
+    const r=await fetch(URL_GEN,{method:'POST',body:JSON.stringify({action:'guardar',hoja,semana:parseInt(semana),fecha,ejecutante,items,observaciones_generales:obsGen})});
+    const res=await r.json();
+    if(res.ok){msg.style.color='#3fb950';msg.textContent='✅ Guardado — '+res.hoja+' Semana '+res.semana;}
+    else{msg.style.color='#f85149';msg.textContent='❌ '+res.error;}
+  }catch(e){msg.style.color='#f85149';msg.textContent='❌ Error de conexión';}
+}
+
+function gLimpiar(){document.getElementById('g-fecha').value='';document.getElementById('g-ejecutante').value='';document.getElementById('g-semana-info').textContent='— seleccioná una fecha';document.getElementById('g-msg').textContent='';gCargado=false;gRenderTabla();}
+
+// ════════════════════════════════════
+// UPS
+// ════════════════════════════════════
+const UPS_IDS=["UPS 1","UPS 2","UPS 3","UPS 4","UPS 5","UPS 6","UPS 12"];
+const UPS_ITEMS=["Fallo","Modo Normal","Modo Bypass","Modo Baterías","Consumo Carga [%]","Tensión Baterías [V]","Tensión Salida [V]","Limpieza General"];
+let uCargado=false;
+
+function uRenderTabla(){
+  document.getElementById('u-container').innerHTML=UPS_IDS.map((upsId,ui)=>`
+    <div class="ups-section">
+      <div class="ups-title">${upsId}</div>
+      ${UPS_ITEMS.map((item,i)=>`
+        <div class="gen-item">
+          <label>${item}</label>
+          <input id="u_est_${ui}_${i}" placeholder="valor / estado...">
+          <input id="u_obs_${ui}_${i}" placeholder="Observaciones..." class="gen-obs">
+        </div>`).join('')}
+    </div>`).join('');
+  uCargado=true;
+}
+
+// Mostrar tabla cuando se completa fecha o ejecutante
+['u-fecha','u-ejecutante'].forEach(id=>{
+  document.getElementById(id).addEventListener('input',()=>{
+    const fecha=document.getElementById('u-fecha').value;
+    const ejecutante=document.getElementById('u-ejecutante').value.trim();
+    if(fecha&&ejecutante&&!uCargado){uRenderTabla();}
+  });
+});
+
+async function uGuardar(){
+  const fecha=document.getElementById('u-fecha').value;
+  const ejecutante=document.getElementById('u-ejecutante').value.trim();
+  const msg=document.getElementById('u-msg');
+  if(!fecha||!ejecutante){msg.style.color='#f85149';msg.textContent='❌ Completá fecha y ejecutante';return;}
+  const fechaObj=new Date(fecha+'T12:00:00');
+  const hoja=MESES_ES[fechaObj.getMonth()]+' '+fechaObj.getFullYear();
+  const ups=UPS_IDS.map((upsId,ui)=>{
+    const items=UPS_ITEMS.map((nombre,i)=>({nombre,estado:document.getElementById('u_est_'+ui+'_'+i)?document.getElementById('u_est_'+ui+'_'+i).value.trim():'',obs:document.getElementById('u_obs_'+ui+'_'+i)?document.getElementById('u_obs_'+ui+'_'+i).value.trim():''}));
+    return{id:upsId,items};
+  });
+  msg.style.color='#8b949e';msg.textContent='Guardando...';
+  try{
+    const r=await fetch(URL_UPS,{method:'POST',body:JSON.stringify({action:'guardar',hoja,fecha,ejecutante,ups})});
+    const res=await r.json();
+    if(res.ok){msg.style.color='#3fb950';msg.textContent='✅ Guardado en "'+res.hoja+'"';}
+    else{msg.style.color='#f85149';msg.textContent='❌ '+res.error;}
+  }catch(e){msg.style.color='#f85149';msg.textContent='❌ Error de conexión';}
+}
+
+function uLimpiar(){document.getElementById('u-fecha').value='';document.getElementById('u-ejecutante').value='';document.getElementById('u-msg').textContent='';uCargado=false;uRenderTabla();}
+
+
+
+// ════════════════════════════════════
+// ILUMINACIÓN
+// ════════════════════════════════════
+const URL_ILUM='https://script.google.com/macros/s/AKfycbzcgjmnbKHjWrdxa6g8Fv2XIhjeTCyOZM6iGKdrnO3r4FZj2rRtHuen2vBPD1ID5Sfg/exec';
+const ILUM_SHEETS={
+  'Iluminación de Emergencia Producción PB':'1BmvuK2u2Azj5MUI1z9C9ibRJd7KJJf--9Er7uGu1j7k',
+  'Iluminación de Emergencia Islas de Carga':'1UK3f4ECe3qxErDSbHq3EHQWKmAF8N7soD4ie_SFa-zM',
+  'ILUMINACION EMERGENCIA PRODUCCION P.A':'1ci4MbThKNslOVhFay3GIK85Auw6p6uE-xYE1TSBohhs',
+  'Iluminación de Emergencia CCM Producción-Servicios-Glicerólisis-Generador':'1RqHxNqvoRxo5X-xe6eukVSOxs7fXk3N2iDvnsk1ym_w',
+  'Iluminación Pañoles':'102qFx0IMVrEPnFsHz05vNa7lH5VPAVz7HxvJ1VlH8LU',
+  'Iluminación Edificios Producción':'1azEW1EdlnvsvWoR9OiV1oVjJpmdXJKVn3_gKYVVnpaA',
+  'Iluminación Edificios Mantenimiento':'1tynV6OqOPxPmtrpZi3HQwYrurQEVyxNoJzNaibBaI7o',
+  'Iluminación Edificios de Logística':'17n2ZF3eZju4QmZsISuRqXp9DWm8xTlTCsmQJQMtSEds',
+  'Iluminación Edificios Administración':'18EiAJelvpDvIpH6aUGAWOqp4eoZxOaZ3WHElwSwcOX0',
+  'ILUMINACION CCM PRODUCCIÓN - SERVIC - GLICEROLISIS - GENERADOR':'1sdL-Zy1Cy42y-ACKQ0HIPDnubVGfinkAFweW4OLzMjQ',
+  'ILUMINACIÓN SERVICIOS':'1N8BStr88snSeKwHSlDJmNR3EECtSBDKVK06oYNTj7Dk',
+  'ILUMINACION PRODUCCION PLANTA BAJA':'1zyQM-Cf_TT-Sr01Qt9DB7LUI9OcF3xZtusZORhxTEr0',
+  'ILUMINACION PLANTA ALTA PRODUCCION':'1dK11ocSxqpkHihOYIyMMqJ9NKEpJ6YaptqPFCUrnsVc',
+  'ILUMINACION PERIMETRALES':'17BMK90hTpR5DEipRmRyuKoSqsbtjNhP8fJ-zosVEPgo',
+  'ILUMINACION PLAYA DE TANQUES':'1GyAgNbWi-F_kjPCjgj-ZVsVBzMSsDwujxHGf5B-ZQcE',
+  'ILUMINACION ISLA DE CARGA':'1G1_iN05OdVjW8LifG5jn1MTbo7iaj-VqksaoP5TZ36U',
+  'ILUMINACION GLICEROLISIS':'1Fzl7WesxC88JFmrsp_nsP9_4Jfcmkr9OAs9wrOS8jQ0',
+  'ILUMINACION BALANZA':'1wyS2XiPXh9dkQWkSppfFNg5z57T-KunJSWP8tvTVb7U',
+  'ILUMINACION AREA 40 y 50':'1I-xTn3TNz7G_a6GmPvVmeAq87ca-QdQwZcjfA-rzyo0',
+  'ILUMINACION AREA 31 y 32':'1cH4yWnLDkVlDgdSkWE4FUMbdu_xx0rc_rYFvCGhOrwc',
+  'ILUMINACION GALPON DE QUIMICOS':'1JtzYfkjrF1mArsX54WS_eHuiV_j2y6lfGtiHMPX1xlE'
+};
+const ILUM_MESES=["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
+let ilumEquiposCarga=[];
+
+async function ilumCargarEquipos(){
+  const ruta=document.getElementById('ilum-ruta').value;
+  const container=document.getElementById('ilum-container');
+  if(!ruta){container.innerHTML='<div class="no-data">Seleccioná una ruta.</div>';return;}
+  const sheetId=ILUM_SHEETS[ruta];
+  if(!sheetId){container.innerHTML='<div class="no-data">❌ Ruta no encontrada.</div>';return;}
+  container.innerHTML='<div class="loading"><div class="spinner"></div><div style="color:#8b949e;font-size:.82rem">Cargando equipos...</div></div>';
+  try{
+    const r=await fetch(URL_ILUM+'?action=equipos&sheetId='+encodeURIComponent(sheetId));
+    const data=await r.json();
+    ilumEquiposCarga=(data.equipos||[]);
+    ilumRenderEquipos();
+  }catch(e){container.innerHTML='<div class="no-data">❌ Error cargando equipos</div>';}
+}
+
+function ilumRenderEquipos(){
+  const container=document.getElementById('ilum-container');
+  if(!ilumEquiposCarga.length){container.innerHTML='<div class="no-data">Sin equipos.</div>';return;}
+  const opts=['','OK','MAL','URG','N/A','F/S'].map(v=>`<option value="${v}">${v||'--'}</option>`).join('');
+  // Agrupar por sección
+  const secciones={};
+  ilumEquiposCarga.forEach((e,i)=>{const s=e.seccion||'General';if(!secciones[s])secciones[s]=[];secciones[s].push({...e,_idx:i});});
+  let html='';
+  Object.keys(secciones).forEach(sec=>{
+    html+=`<div class="card"><div class="card-title">📍 ${sec}</div>`;
+    secciones[sec].forEach(e=>{
+      const i=e._idx;
+      html+=`<div class="motor-row">
+        <div class="motor-tag">${e.tag||e.ubicacion||'Equipo '+(i+1)}</div>
+        ${e.ubicacion?`<div style="font-size:.72rem;color:#8b949e;margin-bottom:6px">${e.ubicacion}</div>`:''}
+        <div class="insp-grid">
+          <div class="insp-item"><label>Circuito</label><input id="ilum_cir_${i}" value="${e.circuito||''}" style="background:#21262d;border:1px solid #30363d;color:#e6edf3;padding:7px 8px;border-radius:6px;font-size:0.78rem;outline:none;width:100%"></div>
+          <div class="insp-item"><label>Potencia</label><input id="ilum_pot_${i}" value="${e.potencia||''}" style="background:#21262d;border:1px solid #30363d;color:#e6edf3;padding:7px 8px;border-radius:6px;font-size:0.78rem;outline:none;width:100%"></div>
+          <div class="insp-item"><label>Tipo</label><input id="ilum_tip_${i}" value="${e.tipo||''}" style="background:#21262d;border:1px solid #30363d;color:#e6edf3;padding:7px 8px;border-radius:6px;font-size:0.78rem;outline:none;width:100%"></div>
+          <div class="insp-item"><label>Lámpara</label><input id="ilum_lam_${i}" value="${e.lampara||''}" style="background:#21262d;border:1px solid #30363d;color:#e6edf3;padding:7px 8px;border-radius:6px;font-size:0.78rem;outline:none;width:100%"></div>
+          <div class="insp-item"><label>Estado</label><select id="ilum_est_${i}" onchange="colorSelect(this)">${opts}</select></div>
+        </div>
+        <div class="insp-obs"><input id="ilum_obs_${i}" placeholder="Observaciones..." style="background:#21262d;border:1px solid #30363d;color:#e6edf3;padding:7px 8px;border-radius:6px;font-size:0.78rem;outline:none;width:100%"></div>
+      </div>`;
+    });
+    html+='</div>';
+  });
+  container.innerHTML=html;
+}
+
+async function ilumGuardar(){
+  const ruta=document.getElementById('ilum-ruta').value;
+  const realizo=document.getElementById('ilum-realizo').value.trim();
+  const fecha=document.getElementById('ilum-fecha').value;
+  const ot=document.getElementById('ilum-ot').value.trim();
+  const msg=document.getElementById('ilum-msg');
+  if(!ruta||!realizo||!fecha){msg.style.color='#f85149';msg.textContent='❌ Completá ruta, realizó y fecha';return;}
+  if(!ilumEquiposCarga.length){msg.style.color='#f85149';msg.textContent='❌ Sin equipos cargados';return;}
+  const sheetId=ILUM_SHEETS[ruta];
+  const fechaObj=new Date(fecha+'T12:00:00');
+  const hoja=ILUM_MESES[fechaObj.getMonth()]+' '+fechaObj.getFullYear();
+  const equipos=ilumEquiposCarga.map((e,i)=>({
+    tag:e.tag||'',
+    ubicacion:document.getElementById('ilum_cir_'+i)?document.getElementById('ilum_cir_'+i).value.trim():'',
+    circuito:document.getElementById('ilum_cir_'+i)?document.getElementById('ilum_cir_'+i).value.trim():'',
+    potencia:document.getElementById('ilum_pot_'+i)?document.getElementById('ilum_pot_'+i).value.trim():'',
+    tipo:document.getElementById('ilum_tip_'+i)?document.getElementById('ilum_tip_'+i).value.trim():'',
+    lampara:document.getElementById('ilum_lam_'+i)?document.getElementById('ilum_lam_'+i).value.trim():'',
+    estado:document.getElementById('ilum_est_'+i)?document.getElementById('ilum_est_'+i).value:'',
+    observaciones:document.getElementById('ilum_obs_'+i)?document.getElementById('ilum_obs_'+i).value.trim():''
+  }));
+  msg.style.color='#8b949e';msg.textContent='Guardando...';
+  try{
+    const r=await fetch(URL_ILUM,{method:'POST',body:JSON.stringify({action:'guardar',sheetId,ruta,realizado:realizo,fecha,ot,hoja,equipos})});
+    const res=await r.json();
+    if(res.ok){msg.style.color='#3fb950';msg.textContent='✅ Guardado en "'+res.hoja+'"';}
+    else{msg.style.color='#f85149';msg.textContent='❌ '+(res.error||'Error');}
+  }catch(e){msg.style.color='#f85149';msg.textContent='❌ Error de conexión';}
+}
+
+function ilumLimpiar(){
+  document.getElementById('ilum-ruta').value='';
+  document.getElementById('ilum-realizo').value='';
+  document.getElementById('ilum-fecha').value='';
+  document.getElementById('ilum-ot').value='';
+  document.getElementById('ilum-container').innerHTML='<div class="no-data">Seleccioná una ruta.</div>';
+  document.getElementById('ilum-msg').textContent='';
+  ilumEquiposCarga=[];
+}
+
+// ════ PERSISTENCIA LOCAL (termografia) ════
+function tSaveLocal(){
+  const sector=document.getElementById('t-sector').value;
+  if(!sector)return;
+  const key='termo_'+sector;
+  const data={estado:{}};
+  tOrdenTags.forEach(function(tag){
+    if(tCargaEstado[tag]){
+      data.estado[tag]={
+        guardado:tCargaEstado[tag].guardado||false,
+        valores:tCargaEstado[tag].valores||{},
+        observacion:tCargaEstado[tag].observacion||''
+      };
+    }
+  });
+  try{localStorage.setItem(key,JSON.stringify(data));}catch(e){}
+}
+function tLoadLocal(){
+  const sector=document.getElementById('t-sector').value;
+  if(!sector)return;
+  const key='termo_'+sector;
+  try{
+    const raw=localStorage.getItem(key);
+    if(!raw)return;
+    const data=JSON.parse(raw);
+    if(data.estado){
+      Object.keys(data.estado).forEach(function(tag){
+        if(tCargaEstado[tag]){
+          tCargaEstado[tag].guardado=data.estado[tag].guardado||false;
+          tCargaEstado[tag].valores=data.estado[tag].valores||{};
+          tCargaEstado[tag].observacion=data.estado[tag].observacion||'';
+        }
+      });
+    }
+  }catch(e){}
+}
+function tClearLocal(sectorParam){
+  const sector=sectorParam||document.getElementById('t-sector').value;
+  if(!sector)return;
+  try{localStorage.removeItem('termo_'+sector);}catch(e){}
+}
+// ══ Service Worker ══
+if('serviceWorker' in navigator){
+  const swCode=`self.addEventListener('install',e=>self.skipWaiting());self.addEventListener('activate',e=>e.waitUntil(clients.claim()));self.addEventListener('fetch',e=>{if(e.request.url.includes('script.google.com'))return;e.respondWith(fetch(e.request).catch(()=>caches.match(e.request)));});`;
+  navigator.serviceWorker.register(URL.createObjectURL(new Blob([swCode],{type:'application/javascript'}))).catch(()=>{});
+}
+
+// ══ INIT ══
+const hoy=new Date();
+const fechaStr=hoy.getFullYear()+'-'+String(hoy.getMonth()+1).padStart(2,'0')+'-'+String(hoy.getDate()).padStart(2,'0');
+document.getElementById('m-fecha').value=fechaStr;
+document.getElementById('i-fecha').value=fechaStr;
+document.getElementById('g-fecha').value=fechaStr;
+document.getElementById('u-fecha').value=fechaStr;
+document.getElementById('ilum-fecha').value=fechaStr;
+gAutoSemana();
+tLoadSectores();
+</script>
+</body>
+</html>

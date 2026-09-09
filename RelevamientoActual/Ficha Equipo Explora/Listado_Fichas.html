@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Fichas de Equipos — Explora</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap');
+:root{
+  --bg:#f4f5f7;
+  --surface:#ffffff;
+  --surface2:#f9fafb;
+  --border:#e5e7eb;
+  --border2:#d1d5db;
+  --text:#111827;
+  --text2:#374151;
+  --text3:#6b7280;
+  --text4:#9ca3af;
+  --accent:#e67e22;
+  --accent-light:#fff3e6;
+  --accent-hover:#d35400;
+  --green:#16a34a;--green-light:#dcfce7;
+  --red:#dc2626;--red-light:#fee2e2;
+  --yellow:#ca8a04;--yellow-light:#fef9c3;
+  --radius:10px;--radius-sm:6px;
+  --shadow:0 1px 3px rgba(0,0,0,.08),0 1px 2px rgba(0,0,0,.06);
+  --shadow-md:0 4px 16px rgba(0,0,0,.08),0 2px 6px rgba(0,0,0,.05);
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{background:var(--bg);font-family:'DM Sans',sans-serif;color:var(--text);min-height:100vh;font-size:15px}
+
+/* ── HEADER ── */
+.topbar{background:var(--surface);border-bottom:1px solid var(--border);box-shadow:var(--shadow);position:sticky;top:0;z-index:200}
+.topbar-inner{padding:12px 16px;display:flex;align-items:center;gap:10px}
+.title-dot{width:11px;height:11px;background:var(--accent);border-radius:2px;transform:rotate(8deg);flex-shrink:0}
+.topbar h1{font-size:15px;font-weight:700;letter-spacing:.3px}
+.plant{font-size:10px;color:var(--text4);text-transform:uppercase;letter-spacing:1.5px;font-weight:600}
+.count-badge{margin-left:auto;font-size:11px;color:var(--text3);background:var(--surface2);border:1px solid var(--border);padding:4px 10px;border-radius:20px;font-weight:600;white-space:nowrap}
+
+/* ── SEARCH ── */
+.search-wrap{padding:12px 16px 4px;position:sticky;top:56px;background:var(--bg);z-index:180}
+.search-box{position:relative}
+.search-box input{width:100%;background:var(--surface);border:1px solid var(--border2);color:var(--text);font-size:16px;padding:13px 14px 13px 42px;border-radius:var(--radius);font-family:inherit;box-shadow:var(--shadow)}
+.search-box input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(230,126,34,.12)}
+.search-icon{position:absolute;left:14px;top:50%;transform:translateY(-50%);font-size:16px;color:var(--text4)}
+.search-clear{position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;font-size:20px;color:var(--text4);cursor:pointer;padding:4px 8px;display:none}
+.search-clear.show{display:block}
+
+/* ── CONTENT ── */
+.content{padding:8px 16px 40px}
+.loading,.no-data,.error{text-align:center;color:var(--text3);padding:40px 16px;font-size:14px}
+.error{color:var(--red)}
+
+/* ── AREA GROUP ── */
+.area-group{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:10px;box-shadow:var(--shadow);overflow:hidden}
+.area-group-header{display:flex;align-items:center;gap:12px;padding:14px 16px;cursor:pointer;user-select:none;transition:background .15s}
+.area-group-header:active{background:var(--surface2)}
+.area-group.open .area-group-header{background:var(--accent-light);border-bottom:1px solid #fed7aa}
+.area-group-chevron{font-size:13px;color:var(--text4);transition:transform .2s;flex-shrink:0}
+.area-group.open .area-group-chevron{transform:rotate(90deg)}
+.area-group.open .area-group-name{color:var(--accent)}
+.area-group-name{font-size:14px;font-weight:700;color:var(--text);flex:1}
+.area-group-count{font-size:11px;color:var(--text4);background:var(--bg);padding:3px 9px;border-radius:10px;border:1px solid var(--border)}
+.area-group-body{display:none}
+.area-group.open .area-group-body{display:block}
+
+/* ── EQUIPO ROW ── */
+.equipo-row{display:flex;align-items:center;gap:12px;padding:14px 16px;border-top:1px solid var(--border);cursor:pointer;transition:background .12s}
+.equipo-row:first-child{border-top:none}
+.equipo-row:active{background:var(--accent-light)}
+.equipo-main{flex:1;min-width:0}
+.equipo-tag{font-family:'DM Mono',monospace;font-size:12px;font-weight:700;color:var(--accent);background:var(--accent-light);padding:2px 8px;border-radius:4px;border:1px solid #fed7aa;display:inline-block;margin-bottom:4px}
+.equipo-desc{font-size:14px;color:var(--text);font-weight:500;line-height:1.35}
+.equipo-sub{font-size:12px;color:var(--text4);margin-top:2px}
+.equipo-right{display:flex;align-items:center;gap:10px;flex-shrink:0}
+.badge-crit{font-size:12px;font-weight:700;width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;border:1px solid transparent}
+.crit-A{background:var(--red-light);color:var(--red);border-color:#fecaca}
+.crit-B{background:var(--yellow-light);color:var(--yellow);border-color:#fde68a}
+.crit-C{background:var(--green-light);color:var(--green);border-color:#bbf7d0}
+.chevron-go{font-size:16px;color:var(--text4)}
+
+.footer-note{text-align:center;font-size:11px;color:var(--text4);padding:20px 16px 0}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-inner">
+    <span class="title-dot"></span>
+    <div>
+      <div class="plant">Planta Explora</div>
+      <h1>Fichas de Equipos</h1>
+    </div>
+    <span class="count-badge" id="count-badge">—</span>
+  </div>
+</div>
+
+<div class="search-wrap">
+  <div class="search-box">
+    <span class="search-icon">🔍</span>
+    <input id="search" type="text" placeholder="Buscar por TAG, descripción o área…" autocomplete="off" oninput="render()">
+    <button class="search-clear" id="search-clear" onclick="limpiarBusqueda()">✕</button>
+  </div>
+</div>
+
+<div class="content" id="content">
+  <p class="loading">Cargando equipos…</p>
+</div>
+
+<script>
+/* ═══ CONFIG ═══ */
+// Mismo backend que usa el dashboard para traer los activos:
+var VENC_URL = "https://script.google.com/macros/s/AKfycbxBBiJZexMdWlGFDWKnIaPiOmSACB9RL1G-w03amZYBBwIw4AUWl59WzIdZoyqNrtiXvg/exec";
+// Misma ficha que abre el QR (doGet ?activo=ID):
+var FICHA_URL = "https://script.google.com/a/macros/explora.com.ar/s/AKfycbxY1jscRXcwK2qEP_bdpYRZJ4i-Yo9-hNJsEkHEavT0AnD53ke4NPyLa3laaAkxZe5KKA/exec";
+
+var activos = [];
+
+/* ═══ CARGA ═══ */
+function loadActivos(){
+  fetch(VENC_URL + '?action=getActivos')
+    .then(function(r){ return r.json(); })
+    .then(function(data){
+      activos = data || [];
+      render();
+    })
+    .catch(function(e){
+      document.getElementById('content').innerHTML =
+        "<p class='error'>No se pudieron cargar los equipos.<br>" + e.message + "</p>";
+    });
+}
+
+/* ═══ ABRIR FICHA (mismo link que el QR) ═══ */
+function abrirFicha(r){
+  var id = r.id || r.tag;
+  var url = FICHA_URL + '?activo=' + encodeURIComponent(id);
+  // Nombre fijo de ventana: reutiliza siempre la misma pestaña de ficha
+  window.open(url, 'ficha_explora');
+}
+
+/* ═══ RENDER ═══ */
+function render(){
+  var q = (document.getElementById('search').value || '').toLowerCase().trim();
+  document.getElementById('search-clear').classList.toggle('show', !!q);
+
+  var rows = activos.filter(function(r){
+    if(!q) return true;
+    return (String(r.tag||'').toLowerCase().includes(q) ||
+            String(r.descripcion||'').toLowerCase().includes(q) ||
+            String(r.area||'').toLowerCase().includes(q) ||
+            String(r.subarea||'').toLowerCase().includes(q) ||
+            String(r.proveedor_modelo||r['proveedor___modelo']||'').toLowerCase().includes(q) ||
+            String(r.criticidad||'').toLowerCase().includes(q));
+  });
+
+  document.getElementById('count-badge').textContent = rows.length + ' equipos';
+
+  if(!rows.length){
+    document.getElementById('content').innerHTML =
+      "<p class='no-data'>" + (q ? "Sin resultados para «"+q+"»." : "Sin equipos registrados.") + "</p>";
+    return;
+  }
+
+  // Agrupar por ÁREA
+  var areas = {};
+  rows.forEach(function(r){
+    var a = String(r.area || 'Sin área').trim();
+    if(!areas[a]) areas[a] = [];
+    areas[a].push(r);
+  });
+
+  var areaKeys = Object.keys(areas).sort();
+  var html = '';
+  areaKeys.forEach(function(area, idx){
+    var equipos = areas[area].slice().sort(function(a,b){
+      return String(a.tag||'').localeCompare(String(b.tag||''));
+    });
+    var isOpen = idx === 0 || !!q; // primera abierta, o todas si hay búsqueda
+    html += '<div class="area-group'+(isOpen?' open':'')+'" id="ag-'+idx+'">';
+    html += '<div class="area-group-header" onclick="toggleArea(\'ag-'+idx+'\')">';
+    html += '<span class="area-group-chevron">▶</span>';
+    html += '<span class="area-group-name">'+area+'</span>';
+    html += '<span class="area-group-count">'+equipos.length+' equipo'+(equipos.length!==1?'s':'')+'</span>';
+    html += '</div>';
+    html += '<div class="area-group-body">';
+    equipos.forEach(function(r){
+      var crit = String(r.criticidad || r['CRITICIDAD'] || '').trim().toUpperCase();
+      var critHtml = (crit==='A'||crit==='B'||crit==='C')
+        ? '<span class="badge-crit crit-'+crit+'">'+crit+'</span>' : '';
+      var sub = String(r.subarea||'').trim();
+      var rj = JSON.stringify(r).replace(/"/g,'&quot;');
+      html += '<div class="equipo-row" data-r="'+rj+'" onclick="abrirFicha(JSON.parse(this.dataset.r))">';
+      html +=   '<div class="equipo-main">';
+      html +=     '<span class="equipo-tag">'+(r.tag||'—')+'</span>';
+      html +=     '<div class="equipo-desc">'+(r.descripcion||'Sin descripción')+'</div>';
+      if(sub) html += '<div class="equipo-sub">'+sub+'</div>';
+      html +=   '</div>';
+      html +=   '<div class="equipo-right">'+critHtml+'<span class="chevron-go">›</span></div>';
+      html += '</div>';
+    });
+    html += '</div></div>';
+  });
+
+  html += '<p class="footer-note">Tocá un equipo para abrir su ficha completa</p>';
+  document.getElementById('content').innerHTML = html;
+}
+
+function toggleArea(id){
+  document.getElementById(id).classList.toggle('open');
+}
+
+function limpiarBusqueda(){
+  document.getElementById('search').value = '';
+  render();
+  document.getElementById('search').focus();
+}
+
+/* ═══ INIT ═══ */
+loadActivos();
+</script>
+</body>
+</html>
