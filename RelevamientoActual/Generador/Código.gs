@@ -47,7 +47,7 @@ function getSemanaDelMes(fecha) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-function doGet(e) {
+function doGet_(e) {
   const action = (e && e.parameter && e.parameter.action) ? e.parameter.action : "ultima";
   if (action === "ultima")   return getUltimaSemana();
   if (action === "semana")   return getSemana(e.parameter);
@@ -55,7 +55,7 @@ function doGet(e) {
   return jsonGen({ ok: false, error: "Accion no reconocida" });
 }
 
-function doPost(e) {
+function doPost_(e) {
   try {
     const payload = JSON.parse(e.postData.contents);
     if (payload.action === "guardar") return guardarSemanaGen(payload);

@@ -34,7 +34,7 @@ var ILUM_SHEETS = {
 // ENTRY POINTS
 // ══════════════════════════════════════════════════════════════
 
-function doGet(e) {
+function doGet_(e) {
   var params = e.parameter || {};
   var action = params.action || '';
   var sheetId = params.sheetId || '';
@@ -51,7 +51,7 @@ function doGet(e) {
   }
 }
 
-function doPost(e) {
+function doPost_(e) {
   try {
     var body = JSON.parse(e.postData.contents);
     if (body.action === 'guardar') return jsonResp(guardarEjecucion(body));
@@ -84,6 +84,7 @@ function getResumen(force) {
   }
 
   var result = [];
+  var hayError = false;   // si alguna planilla falla, no se guarda el resumen en caché
   var rutas = Object.keys(ILUM_SHEETS);
 
   rutas.forEach(function (ruta) {
@@ -107,11 +108,12 @@ function getResumen(force) {
         fs: stats.fs
       });
     } catch (err) {
+      hayError = true;
       result.push({ ruta: ruta, fecha: 'Error', estado: 'sin-dato', ok: 0, mal: 0, urg: 0, fs: 0 });
     }
   });
 
-  cache.put(cacheKey, JSON.stringify(result), CACHE_SECONDS);
+  if (!hayError) cache.put(cacheKey, JSON.stringify(result), CACHE_SECONDS);
   return { ok: true, data: result, cached: false };
 }
 

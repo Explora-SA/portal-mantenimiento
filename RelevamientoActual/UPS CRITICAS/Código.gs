@@ -33,7 +33,7 @@ const UPS_DEF = [
 ];
 
 // ─────────────────────────────────────────────────────────────────────────────
-function doGet(e) {
+function doGet_(e) {
   const action = (e && e.parameter && e.parameter.action) ? e.parameter.action : "ultima";
   if (action === "ultima")  return getUltimaHojaUPS();
   if (action === "hoja")    return getHojaUPS(e.parameter);
@@ -41,7 +41,7 @@ function doGet(e) {
   return jsonUPS({ ok: false, error: "Accion no reconocida" });
 }
 
-function doPost(e) {
+function doPost_(e) {
   try {
     const payload = JSON.parse(e.postData.contents);
     if (payload.action === "guardar") return guardarUPS(payload);

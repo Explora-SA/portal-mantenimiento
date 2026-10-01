@@ -35,7 +35,7 @@ const COLS_INSP = [
   {key:"observaciones",    label:"Observaciones",        col:14}
 ];
 
-function doGet(e) {
+function doGet_(e) {
   const action = e && e.parameter && e.parameter.action ? e.parameter.action : "resumen";
   if (action === "resumen")  return getResumen();
   if (action === "detalle")  return getDetalle(e.parameter);
@@ -43,7 +43,7 @@ function doGet(e) {
   return ContentService.createTextOutput(JSON.stringify({ok:false,error:"Accion no reconocida"})).setMimeType(ContentService.MimeType.JSON);
 }
 
-function doPost(e) {
+function doPost_(e) {
   try {
     const payload = JSON.parse(e.postData.contents);
     if (payload.action === "guardar") return guardarEjecucion(payload);
