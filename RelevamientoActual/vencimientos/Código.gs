@@ -10,7 +10,7 @@ const SHEET_ID_ELECTRICO = "1oVCVQfDOuzQkojhOZoY7WWwaWTEJvWDOrwZ_8fI8XBM";
 const SHEET_ID_MECANICO  = "1y_eoa9tlKlipM-_nAQnbZN4j8ZxfoC-lV7dLdTJnybM";
 const SHEET_STOCK = "STOCK";
 
-function doGet(e) {
+function doGet_(e) {
   const action = e && e.parameter && e.parameter.action ? e.parameter.action : "get";
   
   // Si viene con parámetro "activo", servir la ficha de solo lectura
@@ -41,7 +41,7 @@ if (e && e.parameter && e.parameter.activo) {
   return ContentService.createTextOutput(JSON.stringify({ok:false,error:"Acción no reconocida"})).setMimeType(ContentService.MimeType.JSON);
 }
 
-function doPost(e) {
+function doPost_(e) {
   try {
     const payload = JSON.parse(e.postData.contents);
     const action = payload.action || "create";
