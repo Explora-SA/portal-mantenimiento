@@ -2,7 +2,8 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8"/>
-<script src="./api.js?v=1"></script>
+<script src="./api.js?v=2"></script>
+<script src="./nav.js?v=1"></script>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
 <title>Portal — Planta Explora</title>
 <style>
@@ -357,143 +358,18 @@ var currentUser = null, currentRol = null;
 // Definición de herramientas
 // acceso: 'full' | 'read' | 'none'
 // rol_requerido: null = todos, string = solo ese rol puede escribir
-var TOOLS = [
-  {
-    id: 'planificador',
-    nombre: 'Planificador',
-    desc: 'Dashboard principal — ST, vencimientos, calendario, activos e indicadores',
-    icon: '📋',
-    color: '#e67e22',
-    archivo: 'Planificador_v3.html',
-    accesoPor: function(rol) {
-      var r = (rol||'').toLowerCase();
-      if(r.includes('editor') || r.includes('supervisor')) return 'full';
-      return 'none';
-    }
-  },
-  {
-    id: 'solicitudes',
-    nombre: 'Solicitudes de Trabajo',
-    desc: 'Portal para cargar y hacer seguimiento de solicitudes de trabajo',
-    icon: '📝',
-    color: '#7c3aed',
-    archivo: 'solicitudes_trabajo_v2.html',
-    accesoPor: function(rol) {
-      var r = (rol||'').toLowerCase();
-      if(r.includes('editor') || r.includes('supervisor') || r.includes('solicitante') || r.includes('logistica')) return 'full';
-      return 'none';
-    }
-  },
-  {
-    id: 'operadores',
-    nombre: 'Dashboard Operadores',
-    desc: 'Tareas diarias del planificador — ver, marcar realizadas y cargar observaciones',
-    icon: '🔧',
-    color: '#16a34a',
-    archivo: 'operadores.html',
-    accesoPor: function(rol) {
-      var r = (rol||'').toLowerCase();
-      if(r.includes('logistica')) return 'none';
-      if(r.includes('editor') || r.includes('supervisor') || r.includes('operador')) return 'full';
-      return 'none';
-    }
-  },
-  {
-    id: 'preventivos',
-    nombre: 'Preventivos Eléctricos',
-    desc: 'Termografía, motores, instrumentación, UPS y generador',
-    icon: '⚡',
-    color: '#f97316',
-    archivo: 'Dashboard_Preventivos_Electricos.html',
-    accesoPor: function(rol) {
-      var r = (rol||'').toLowerCase();
-      if(r.includes('editor') || r.includes('supervisor')) return 'full';
-      if(r.includes('operador_mecanico')) return 'read';
-      if(r.includes('operador_electrico')) return 'full';
-      return 'none';
-    }
-  },
-  {
-    id: 'gestion',
-    nombre: 'KPIs de Gestión',
-    desc: 'Indicadores de desempeño del mantenimiento, historial y ficha por equipo',
-    icon: '📊',
-    color: '#8b5cf6',
-    archivo: 'Dashboard_Gestion_del_Mantenimiento.html',
-    accesoPor: function(rol) {
-      var r = (rol||'').toLowerCase();
-      if(r.includes('editor') || r.includes('supervisor')) return 'full';
-      return 'none';
-    }
-  },
-  {
-    id: 'activos',
-    nombre: 'Activos',
-    desc: 'Gestión de activos, historial de intervenciones y stock de repuestos',
-    icon: '🏭',
-    color: '#6366f1',
-    archivo: 'Dashboard_Activos.html',
-    accesoPor: function(rol) {
-      var r = (rol||'').toLowerCase();
-      if(r.includes('editor') || r.includes('supervisor')) return 'full';
-      if(r.includes('solicitante')) return 'read';
-      return 'none';
-    }
-  },
-  {
-    id: 'prev_mecanicos',
-    nombre: 'Preventivos Mecánicos',
-    desc: 'Autoelevador, compresores, generador, red contra incendio e inspección TAAH',
-    icon: '🔧',
-    color: '#0ea5e9',
-    archivo: 'Dashboard_Preventivos_Mecanicos.html',
-    accesoPor: function(rol) {
-      var r = (rol||'').toLowerCase();
-      if(r.includes('editor') || r.includes('supervisor')) return 'full';
-      if(r.includes('operador_electrico')) return 'read';
-      if(r.includes('operador_mecanico')) return 'full';
-      return 'none';
-    }
-  },
-  {
-    id: 'logistica',
-    nombre: 'Logística',
-    desc: 'Inspección visual TAAH — Control mensual de condición externo',
-    icon: '🛢️',
-    color: '#10b981',
-    archivo: 'Dashboard_Logistica.html',
-    accesoPor: function(rol) {
-      var r = (rol||'').toLowerCase();
-      if(r.includes('editor') || r.includes('supervisor') || r.includes('logistica')) return 'full';
-      return 'none';
-    }
-  },
-  {
-    id: 'vibraciones',
-    nombre: 'Vibraciones',
-    desc: 'Medición de vibraciones y análisis histórico de bombas',
-    icon: '📊',
-    color: '#2563eb',
-    archivo: 'Vibraciones_Final_Historico.html',
-    accesoPor: function(rol) {
-      var r = (rol||'').toLowerCase();
-      if(r.includes('editor') || r.includes('supervisor')) return 'full';
-      if(r.includes('operador_electrico')) return 'read';
-      if(r.includes('operador_mecanico')) return 'full';
-      return 'none';
-    }
-  }
-];
+// La lista de herramientas y sus permisos vive en nav.js (única fuente: el menú de cada herramienta usa la misma).
+var TOOLS = (window.PortalNav && PortalNav.TOOLS) || [];
 
 function renderTools() {
   var grid = document.getElementById('tools-grid');
   var html = '';
-  // gestor_st ve lo mismo que un solicitante en el portal:
-  // normalizamos el rol para que las verificaciones .includes('solicitante') lo incluyan.
-  var rolPortal = currentRol || '';
-  if((rolPortal).toLowerCase().includes('gestor_st') && !(rolPortal).toLowerCase().includes('solicitante')){
-    rolPortal = rolPortal + ',solicitante';
+  if(!TOOLS.length){
+    grid.innerHTML = '<p style="color:var(--red)">No se pudo cargar el menú de herramientas. Recargá la página (Ctrl+F5).</p>';
+    return;
   }
+  // gestor_st se normaliza dentro de nav.js (rolEfectivo), igual que el menú de cada herramienta.
+  var rolPortal = PortalNav.rolEfectivo(currentRol);
   TOOLS.forEach(function(tool) {
     var acceso = tool.accesoPor(rolPortal);
     if(acceso === 'none') return; // no mostrar herramientas sin acceso
@@ -501,7 +377,7 @@ function renderTools() {
     var badgeText = acceso === 'full' ? '✓ Acceso completo' : '👁 Solo lectura';
     var url = tool.archivo + '?usuario=' + encodeURIComponent(currentUser) + '&rol=' + encodeURIComponent(currentRol);
 
-    html += '<a class="tool-card" href="'+url+'" target="_blank">' +
+    html += '<a class="tool-card" href="'+url+'">' +
       '<div class="tool-card-accent" style="background:'+tool.color+'"></div>' +
       '<div class="tool-icon">'+tool.icon+'</div>' +
       '<div>' +

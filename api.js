@@ -8,7 +8,13 @@
  * LECTURAS (GET de una lista cerrada de acciones, ver LECTURAS):
  *   · Máximo 4 pedidos a la vez por pestaña; el resto espera su turno.
  *   · Si dos partes de la página piden lo mismo al mismo tiempo, se hace un solo pedido.
- *   · Si falla (Google rechaza por cuota, timeout, página de error), reintenta 2 veces.
+ *   · COPIA FRESCA: si hace menos de 45 s que se bajó lo mismo (en esta u otra página del
+ *     portal), las cargas automáticas (al abrir una página, polling) reutilizan esa copia y
+ *     no llaman a Google. Así ir y volver entre herramientas no multiplica los pedidos.
+ *     Si el usuario acaba de tocar algo (actualizar, cambiar de vista) o el pedido lleva
+ *     force=1, siempre se pide el dato fresco.
+ *   · Si falla (Google rechaza por cuota, timeout, página de error), reintenta 2 veces,
+ *     con esperas largas y despareja: reintentar todos juntos empeora una saturación.
  *   · Si sigue fallando, devuelve la última respuesta buena guardada en el navegador
  *     (hasta 24 h) y avisa con un cartel; si no hay ninguna, un mensaje claro en lugar
  *     de "Failed to fetch".
@@ -21,7 +27,12 @@
  *   para no mostrar datos más viejos que el cambio que acaba de hacer el usuario.
  *
  * POLLING: los setInterval de 30 s o más no corren con la pestaña oculta. Al volver a
- *   verla se ejecutan una vez (escalonados) para ponerse al día.
+ *   verla se ejecutan una vez (escalonados) para ponerse al día. Además cada ejecución se
+ *   demora un poco al azar (hasta 15 % del período) para que las pestañas abiertas a la
+ *   misma hora no consulten todas en el mismo instante.
+ *
+ * AVISO DE GUARDADO: cuando una escritura termina bien, se dispara el evento "pm:guardado"
+ *   en window (lo usa nav.js para saber que ya no hay nada a medio guardar).
  *
  * Lo desconocido pasa sin tocar: cualquier acción GET que no esté en las listas va directo.
  */
@@ -34,7 +45,10 @@
     maxSimultaneas: 4,          // pedidos a Google a la vez, por pestaña
     timeoutMs: 25000,           // cuánto esperar cada intento de lectura
     reintentos: 2,              // reintentos después del primer intento
-    esperaMs: [1500, 4000],     // espera antes de cada reintento (se suma un poco de azar)
+    esperaMs: [2500, 7000],     // espera antes de cada reintento (se suma azar, ver azar())
+    frescoMs: 45000,            // una copia guardada más nueva que esto se reutiliza sin pedir
+    gestoMs: 1500,              // un clic/tecla hace menos de esto = pedido del usuario: va fresco
+    jitterPolling: 0.15,        // el polling se demora al azar hasta este % de su período
     guardadoMaxMs: 24 * 3600 * 1000,  // cuánto tiempo sirve un dato guardado como respaldo
     guardadoMaxChars: 700000,   // respuestas más grandes que esto no se guardan
     guardadoMaxEntradas: 40,
@@ -101,6 +115,12 @@
     pares.sort();
     return u.origin + u.pathname + '?' + pares.join('&');
   }
+
+  // ── Gestos del usuario ────────────────────────────────────────────────────
+  var ultimoGesto = 0;
+  ['pointerdown', 'click', 'keydown', 'touchstart'].forEach(function (ev) {
+    try { document.addEventListener(ev, function () { ultimoGesto = Date.now(); }, true); } catch (e) {}
+  });
 
   // ── Respaldo en el navegador ──────────────────────────────────────────────
   function clavesPropias() {
@@ -264,7 +284,7 @@
   }
 
   function esperar(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
-  function azar() { return Math.floor(Math.random() * 500); }
+  function azar() { return Math.floor(Math.random() * 1500); }
 
   function respuesta(r) {
     var h = { 'Content-Type': 'application/json; charset=utf-8' };
@@ -326,6 +346,12 @@
     var clave = claveDe(c.u);
     var forzado = c.u.searchParams.get('force') === '1';
     var llave = clave + (forzado ? '#force' : '');
+    if (!forzado && Date.now() - ultimoGesto >= CFG.gestoMs) {
+      var copia = leerGuardado(clave);
+      if (copia && Date.now() - copia.t < CFG.frescoMs) {
+        return Promise.resolve(respuesta({ texto: copia.texto, guardado: null }));
+      }
+    }
     var vuelo = enVuelo[llave];
     if (!vuelo) {
       vuelo = enVuelo[llave] = pedirLectura(url, init, clave).then(function (r) {
@@ -355,9 +381,19 @@
   }
 
   // ── Escrituras ────────────────────────────────────────────────────────────
+  function avisarGuardado(r) {
+    try {
+      if (!r.ok) return;
+      r.clone().text().then(function (t) {
+        if (t.slice(0, 40).replace(/^\s+/, '').indexOf('{"ok":false') !== 0) window.dispatchEvent(new Event('pm:guardado'));
+      }, function () {});
+    } catch (e) {}
+  }
+
   function escribir(input, init, c) {
     return nativeFetch(input, init).then(function (r) {
       descartarGuardado(c.base);
+      avisarGuardado(r);
       return r;
     }, function (e) {
       descartarGuardado(c.base);
@@ -378,7 +414,14 @@
       reg.ejecutar = function () { reg.pendiente = false; return fn.apply(window, extra); };
       var id = siNativo.call(window, function () {
         if (document.hidden) { reg.pendiente = true; return; }
-        return reg.ejecutar();
+        // Se demora un poco al azar para no consultar todas las pestañas en el mismo instante.
+        var demora = Math.floor(Math.random() * ms * CFG.jitterPolling);
+        reg.pendiente = true;   // si la pestaña se oculta durante la demora, se pone al día al volver
+        setTimeout(function () {
+          if (!registro[id] || !reg.pendiente) return;
+          if (document.hidden) return;
+          reg.ejecutar();
+        }, demora);
       }, ms);
       registro[id] = reg;
       return id;
@@ -412,7 +455,7 @@
   try { instalarPolling(); } catch (e) { window.setInterval = siNativo; window.clearInterval = ciNativo; }
 
   window.__portalApi = {
-    version: 1,
+    version: 2,
     // Para diagnóstico desde la consola: __portalApi.limpiarGuardado()
     limpiarGuardado: function () { clavesPropias().forEach(function (k) { localStorage.removeItem(k); }); }
   };
