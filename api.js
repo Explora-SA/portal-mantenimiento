@@ -8,11 +8,15 @@
  * LECTURAS (GET de una lista cerrada de acciones, ver LECTURAS):
  *   · Máximo 4 pedidos a la vez por pestaña; el resto espera su turno.
  *   · Si dos partes de la página piden lo mismo al mismo tiempo, se hace un solo pedido.
- *   · COPIA FRESCA: si hace menos de 45 s que se bajó lo mismo (en esta u otra página del
+ *   · COPIA FRESCA: si hace menos de 5 minutos que se bajó lo mismo (en esta u otra página del
  *     portal), las cargas automáticas (al abrir una página, polling) reutilizan esa copia y
  *     no llaman a Google. Así ir y volver entre herramientas no multiplica los pedidos.
- *     Si el usuario acaba de tocar algo (actualizar, cambiar de vista) o el pedido lleva
- *     force=1, siempre se pide el dato fresco.
+ *     Las solicitudes de trabajo (ST) duran menos (90 s) para que los avisos de ST nuevas
+ *     lleguen casi como antes. Los tiempos están en CFG.frescoMs y CFG.frescoPorAccion.
+ *     La copia deja de valer apenas ESTE navegador guarda algo (cualquier escritura invalida
+ *     todo lo anterior). Va siempre al dato fresco cuando: el usuario acaba de tocar algo
+ *     (actualizar, cambiar de vista), el pedido lleva force=1, o la página se recargó a mano
+ *     (F5 / Ctrl+R: durante los primeros segundos no se reutiliza nada).
  *   · Si falla (Google rechaza por cuota, timeout, página de error), reintenta 2 veces,
  *     con esperas largas y despareja: reintentar todos juntos empeora una saturación.
  *   · Si sigue fallando, devuelve la última respuesta buena guardada en el navegador
@@ -46,7 +50,9 @@
     timeoutMs: 25000,           // cuánto esperar cada intento de lectura
     reintentos: 2,              // reintentos después del primer intento
     esperaMs: [2500, 7000],     // espera antes de cada reintento (se suma azar, ver azar())
-    frescoMs: 45000,            // una copia guardada más nueva que esto se reutiliza sin pedir
+    frescoMs: 300000,           // una copia guardada más nueva que esto (5 min) se reutiliza sin pedir
+    frescoPorAccion: { getAllST: 90000, getST: 90000 },   // excepciones: las ST duran menos (avisos de ST nuevas)
+    recargaManualMs: 8000,      // tras F5/Ctrl+R, durante este tiempo no se reutiliza ninguna copia
     gestoMs: 1500,              // un clic/tecla hace menos de esto = pedido del usuario: va fresco
     jitterPolling: 0.15,        // el polling se demora al azar hasta este % de su período
     guardadoMaxMs: 24 * 3600 * 1000,  // cuánto tiempo sirve un dato guardado como respaldo
@@ -116,6 +122,26 @@
     return u.origin + u.pathname + '?' + pares.join('&');
   }
 
+  // ── Escrituras de este navegador ──────────────────────────────────────────
+  // Cualquier escritura (de cualquier herramienta) deja una marca compartida entre pestañas:
+  // ninguna copia pedida ANTES de esa marca se reutiliza como "fresca". Las copias siguen
+  // sirviendo de respaldo si Google no responde, pero ya no se usan para evitar un pedido.
+  var CLAVE_ESCRITURA = 'pm_api1_w';
+  function marcarEscritura() { try { localStorage.setItem(CLAVE_ESCRITURA, String(Date.now())); } catch (e) {} }
+  function ultimaEscritura() {
+    try { return parseInt(localStorage.getItem(CLAVE_ESCRITURA), 10) || 0; } catch (e) { return 0; }
+  }
+
+  // ── Recarga manual (F5 / Ctrl+R) ──────────────────────────────────────────
+  // Es la forma habitual de pedir "actualizar": en los primeros segundos de la página se va
+  // siempre al dato fresco.
+  var inicioPagina = Date.now();
+  var recargaManual = false;
+  try {
+    var nav0 = window.performance && performance.getEntriesByType && performance.getEntriesByType('navigation')[0];
+    recargaManual = !!(nav0 && nav0.type === 'reload');
+  } catch (e) {}
+
   // ── Gestos del usuario ────────────────────────────────────────────────────
   var ultimoGesto = 0;
   ['pointerdown', 'click', 'keydown', 'touchstart'].forEach(function (ev) {
@@ -147,10 +173,12 @@
     } catch (e) {}
   }
 
-  function guardar(clave, texto) {
+  // La copia se fecha con el momento en que EMPEZÓ el pedido: si en el medio hubo una
+  // escritura, la copia no puede pasar por posterior a ella.
+  function guardar(clave, texto, inicio) {
     if (texto.length > CFG.guardadoMaxChars) return;
     if (texto.slice(0, 40).replace(/^\s+/, '').indexOf('{"ok":false') === 0) return;
-    var v = Date.now() + '|' + texto;
+    var v = (inicio || Date.now()) + '|' + texto;
     try {
       try { localStorage.setItem(PREF + clave, v); }
       catch (e) { podar(0); localStorage.setItem(PREF + clave, v); }   // sin lugar: libera lo más viejo y reintenta una vez
@@ -320,8 +348,9 @@
   function pedirLectura(url, init, clave) {
     var intento = 0;
     function probar() {
-      return conCupo(function () { return pedirUna(url, init); }).then(function (texto) {
-        guardar(clave, texto);
+      var t0 = Date.now();
+      return conCupo(function () { t0 = Date.now(); return pedirUna(url, init); }).then(function (texto) {
+        guardar(clave, texto, t0);
         delete fallos[clave];
         refrescarCartel();
         return { texto: texto, guardado: null };
@@ -346,9 +375,11 @@
     var clave = claveDe(c.u);
     var forzado = c.u.searchParams.get('force') === '1';
     var llave = clave + (forzado ? '#force' : '');
-    if (!forzado && Date.now() - ultimoGesto >= CFG.gestoMs) {
+    var recienRecargada = recargaManual && Date.now() - inicioPagina < CFG.recargaManualMs;
+    if (!forzado && !recienRecargada && Date.now() - ultimoGesto >= CFG.gestoMs) {
       var copia = leerGuardado(clave);
-      if (copia && Date.now() - copia.t < CFG.frescoMs) {
+      var vigencia = CFG.frescoPorAccion[c.u.searchParams.get('action')] || CFG.frescoMs;
+      if (copia && copia.t > ultimaEscritura() && Date.now() - copia.t < vigencia) {
         return Promise.resolve(respuesta({ texto: copia.texto, guardado: null }));
       }
     }
@@ -392,10 +423,12 @@
 
   function escribir(input, init, c) {
     return nativeFetch(input, init).then(function (r) {
+      marcarEscritura();
       descartarGuardado(c.base);
       avisarGuardado(r);
       return r;
     }, function (e) {
+      marcarEscritura();
       descartarGuardado(c.base);
       throw errorEscritura(e);
     });
@@ -455,7 +488,7 @@
   try { instalarPolling(); } catch (e) { window.setInterval = siNativo; window.clearInterval = ciNativo; }
 
   window.__portalApi = {
-    version: 2,
+    version: 3,
     // Para diagnóstico desde la consola: __portalApi.limpiarGuardado()
     limpiarGuardado: function () { clavesPropias().forEach(function (k) { localStorage.removeItem(k); }); }
   };
