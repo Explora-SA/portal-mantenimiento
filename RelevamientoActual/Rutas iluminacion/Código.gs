@@ -3,7 +3,6 @@
 // Preventivos Eléctricos — Planta Explora
 // ══════════════════════════════════════════════════════════════
 
-var CACHE_SECONDS = 600; // 10 minutos de caché para resumen
 
 // ── MAPA DE RUTAS ──
 var ILUM_SHEETS = {
@@ -70,51 +69,122 @@ function jsonResp(obj) {
 
 // ══════════════════════════════════════════════════════════════
 // RESUMEN — todas las rutas (última hoja de cada planilla)
+//
+// El resumen ya NO se calcula en cada pedido (abrir 21 planillas tarda más de lo que
+// el navegador espera). Se calcula en segundo plano cada 10 minutos (trigger, ver
+// instalarTrigger) y se guarda en las propiedades del script. El portal solo lee eso.
+//  · Al guardar/editar una ejecución se actualiza solo esa ruta (rápido).
+//  · force=1 ("Forzar recarga") recalcula las 21 en el momento.
 // ══════════════════════════════════════════════════════════════
 
+var PROP_RESUMEN = 'ilum_resumen_v2';
+
 function getResumen(force) {
-  var cache = CacheService.getScriptCache();
-  var cacheKey = 'ilum_resumen_v1';
-
   if (!force) {
-    var cached = cache.get(cacheKey);
-    if (cached) {
-      return { ok: true, data: JSON.parse(cached), cached: true };
-    }
+    var guardado = leerResumenGuardado_();
+    if (guardado) return { ok: true, data: guardado.data, cached: true, actualizado: guardado.ts };
   }
+  var data = calcularResumenCompleto_();
+  guardarResumen_(data);
+  return { ok: true, data: data, cached: false, actualizado: new Date().toISOString() };
+}
 
-  var result = [];
-  var hayError = false;   // si alguna planilla falla, no se guarda el resumen en caché
-  var rutas = Object.keys(ILUM_SHEETS);
+function calcularResumenCompleto_() {
+  return Object.keys(ILUM_SHEETS).map(function (ruta) {
+    return resumenDeRuta_(ruta);
+  });
+}
 
-  rutas.forEach(function (ruta) {
-    var sheetId = ILUM_SHEETS[ruta];
+// Calcula la fila de resumen de UNA ruta. Nunca tira error: si falla, devuelve estado 'sin-dato'.
+function resumenDeRuta_(ruta) {
+  try {
+    var ss = SpreadsheetApp.openById(ILUM_SHEETS[ruta]);
+    var hojaData = getUltimaHojaEjecucion(ss.getSheets());
+    if (!hojaData) {
+      return { ruta: ruta, fecha: 'Sin ejecuciones', estado: 'sin-dato', ok: 0, mal: 0, urg: 0, fs: 0 };
+    }
+    var stats = calcularEstadisticas(hojaData.sheet);
+    var estado = stats.urg > 0 ? 'critico' : stats.mal > 0 ? 'atencion' : 'ok';
+    return { ruta: ruta, fecha: hojaData.nombre, estado: estado, ok: stats.ok, mal: stats.mal, urg: stats.urg, fs: stats.fs };
+  } catch (err) {
+    console.error('Resumen de "' + ruta + '" falló: ' + err.message);
+    return { ruta: ruta, fecha: 'Error', estado: 'sin-dato', ok: 0, mal: 0, urg: 0, fs: 0 };
+  }
+}
+
+function leerResumenGuardado_() {
+  try {
+    var txt = PropertiesService.getScriptProperties().getProperty(PROP_RESUMEN);
+    if (!txt) return null;
+    var obj = JSON.parse(txt);
+    return (obj && obj.data && obj.data.length) ? obj : null;
+  } catch (err) {
+    return null;
+  }
+}
+
+function guardarResumen_(data) {
+  try {
+    PropertiesService.getScriptProperties().setProperty(
+      PROP_RESUMEN, JSON.stringify({ ts: new Date().toISOString(), data: data }));
+  } catch (err) {
+    console.error('No se pudo guardar el resumen: ' + err.message);
+  }
+}
+
+// Después de guardar/editar: recalcula solo la ruta tocada y la deja en el resumen guardado.
+// Nunca hace fallar el guardado.
+function actualizarRutaEnResumen_(sheetId) {
+  try {
+    var ruta = null;
+    Object.keys(ILUM_SHEETS).forEach(function (r) { if (ILUM_SHEETS[r] === sheetId) ruta = r; });
+    if (!ruta) return;
+    var guardado = leerResumenGuardado_();
+    if (!guardado) return;   // todavía no hay resumen: lo arma el trigger o el primer pedido
+    var fila = resumenDeRuta_(ruta);
+    var data = guardado.data.map(function (x) { return x.ruta === ruta ? fila : x; });
+    guardarResumen_(data);
+  } catch (err) {
+    console.error('No se pudo actualizar el resumen de la ruta: ' + err.message);
+  }
+}
+
+// ── TRIGGER (se instala una sola vez, a mano) ──
+// Corre cada 10 minutos. Espera su turno detrás de los guardados (mismo lock).
+function actualizarResumen() {
+  var lock = LockService.getScriptLock();
+  if (!lock.tryLock(25000)) { console.warn('actualizarResumen: sistema ocupado, se saltea esta vuelta'); return; }
+  try {
+    guardarResumen_(calcularResumenCompleto_());
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+// EJECUTAR UNA VEZ desde el editor: crea el trigger y deja armado el primer resumen.
+function instalarTrigger() {
+  ScriptApp.getProjectTriggers().forEach(function (t) {
+    if (t.getHandlerFunction() === 'actualizarResumen') ScriptApp.deleteTrigger(t);
+  });
+  ScriptApp.newTrigger('actualizarResumen').timeBased().everyMinutes(10).create();
+  actualizarResumen();
+  console.log('Trigger instalado y resumen inicial calculado.');
+}
+
+// EJECUTAR A MANO para revisar las 21 planillas: abre cada una, y cuenta cuántos equipos
+// y cuántas hojas MESAÑO reconoce el parser. Mirar el registro de ejecución.
+function verificarAccesos() {
+  Object.keys(ILUM_SHEETS).forEach(function (ruta) {
     try {
-      var ss = SpreadsheetApp.openById(sheetId);
-      var hojaData = getUltimaHojaEjecucion(ss.getSheets());
-      if (!hojaData) {
-        result.push({ ruta: ruta, fecha: 'Sin ejecuciones', estado: 'sin-dato', ok: 0, mal: 0, urg: 0, fs: 0 });
-        return;
-      }
-      var stats = calcularEstadisticas(hojaData.sheet);
-      var estado = stats.urg > 0 ? 'critico' : stats.mal > 0 ? 'atencion' : 'ok';
-      result.push({
-        ruta: ruta,
-        fecha: hojaData.nombre,
-        estado: estado,
-        ok: stats.ok,
-        mal: stats.mal,
-        urg: stats.urg,
-        fs: stats.fs
-      });
+      var ss = SpreadsheetApp.openById(ILUM_SHEETS[ruta]);
+      var ult = getUltimaHojaEjecucion(ss.getSheets());
+      var equipos = ult ? leerEquipos(ult.sheet, false).length : 0;
+      var estado = !ult ? 'SIN HOJA MESAÑO' : (equipos === 0 ? 'HOJA SIN EQUIPOS (revisar cabecera EQUIPO/ESTADO)' : 'OK');
+      console.log(estado + ' · ' + ruta + ' · última: ' + (ult ? ult.nombre : '-') + ' · equipos: ' + equipos);
     } catch (err) {
-      hayError = true;
-      result.push({ ruta: ruta, fecha: 'Error', estado: 'sin-dato', ok: 0, mal: 0, urg: 0, fs: 0 });
+      console.error('NO ABRE · ' + ruta + ' · ' + err.message);
     }
   });
-
-  if (!hayError) cache.put(cacheKey, JSON.stringify(result), CACHE_SECONDS);
-  return { ok: true, data: result, cached: false };
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -228,7 +298,7 @@ function guardarEjecucion(body) {
   // Escribir metadata y actualizar estados
   escribirEjecucionSobreHoja(sheet, realizado, fecha, ot, equipos);
 
-  CacheService.getScriptCache().remove('ilum_resumen_v1');
+  actualizarRutaEnResumen_(sheetId);
   return { ok: true, hoja: nombreHoja };
 }
 
@@ -509,8 +579,7 @@ function editarEjecucion(body) {
   }
 
   SpreadsheetApp.flush();
-  // Invalidar caché de resumen
-  CacheService.getScriptCache().remove('ilum_resumen_v1');
+  actualizarRutaEnResumen_(sheetId);
 
   return { ok: true };
 }
